@@ -92,6 +92,7 @@ export const mockEmployees: Employee[] = [
     phone: '9123456789',
     salary: 25000,
     joinDate: '2025-01-15',
+    status: 'Active',
   },
   {
     id: 'e2',
@@ -100,6 +101,7 @@ export const mockEmployees: Employee[] = [
     phone: '9234567890',
     salary: 45000,
     joinDate: '2024-06-10',
+    status: 'Active',
   },
 ];
 

@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { cn } from '../../utils/cn';
 
 interface TableProps {
@@ -50,13 +50,17 @@ export function TableRow({ children, className, onClick }: TableRowProps) {
 }
 
 interface TableCellProps {
-  children: ReactNode;
+  children: React.ReactNode;
   className?: string;
+  colSpan?: number;
 }
 
-export function TableCell({ children, className }: TableCellProps) {
+export function TableCell({ children, className, colSpan }: TableCellProps) {
   return (
-    <td className={cn('px-6 py-4 whitespace-nowrap text-slate-600 font-medium', className)}>
+    <td 
+      colSpan={colSpan}
+      className={cn('px-6 py-4 whitespace-nowrap text-slate-600 font-medium', className)}
+    >
       {children}
     </td>
   );

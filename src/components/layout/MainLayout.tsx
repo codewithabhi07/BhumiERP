@@ -1,9 +1,9 @@
-import { ReactNode, useState } from 'react';
+import { useState } from 'react';
+import type { ReactNode } from 'react';
 import { Sidebar } from './Sidebar';
-import { Bell, Search, User, Menu, Settings } from 'lucide-react';
+import { Bell, Search, User, Menu } from 'lucide-react';
 import { Input } from '../ui/Input';
 import { useAppStore } from '../../store/useAppStore';
-import { cn } from '../../utils/cn';
 
 interface MainLayoutProps {
   children: ReactNode;

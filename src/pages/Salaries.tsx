@@ -6,12 +6,10 @@ import { Input } from '../components/ui/Input';
 import { Table, TableRow, TableCell } from '../components/ui/Table';
 import { Modal } from '../components/ui/Modal';
 import { 
-  Wallet, 
   ArrowUpRight, 
   History, 
   Plus,
-  Banknote,
-  Receipt
+  Banknote
 } from 'lucide-react';
 import type { SalaryPayment } from '../types';
 import { format } from 'date-fns';

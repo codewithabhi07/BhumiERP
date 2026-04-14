@@ -5,7 +5,7 @@ import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Table, TableRow, TableCell } from '../components/ui/Table';
 import { Modal } from '../components/ui/Modal';
-import { Plus, Search, Phone, Mail, MapPin, UserPlus } from 'lucide-react';
+import { Search, Phone, Mail, UserPlus } from 'lucide-react';
 import type { Customer } from '../types';
 
 export default function CustomersPage() {

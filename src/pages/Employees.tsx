@@ -6,14 +6,8 @@ import { Input } from '../components/ui/Input';
 import { Table, TableRow, TableCell } from '../components/ui/Table';
 import { Modal } from '../components/ui/Modal';
 import { 
-  Plus, 
   Search, 
-  Calendar, 
   UserPlus, 
-  Clock, 
-  CheckCircle2, 
-  XCircle,
-  MoreVertical,
   CalendarDays,
   Trash2
 } from 'lucide-react';
@@ -21,8 +15,7 @@ import type { Employee, Attendance } from '../types';
 import { format } from 'date-fns';
 
 export default function EmployeesPage() {
-  const { employees, addEmployee, updateEmployee, deleteEmployee, attendance, markAttendance } = useAppStore();
-  const [searchTerm, setSearchTerm] = useState('');
+  const { employees, addEmployee, deleteEmployee, attendance, markAttendance } = useAppStore();  const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isAttendanceModalOpen, setIsAttendanceModalOpen] = useState(false);
   

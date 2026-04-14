@@ -6,16 +6,11 @@ import { Button } from '../components/ui/Button';
 import { Modal } from '../components/ui/Modal';
 import { Input } from '../components/ui/Input';
 import { 
-  TrendingUp, 
-  Download, 
-  Calendar,
-  IndianRupee,
   Wallet,
   CreditCard,
   QrCode,
   Edit2,
   Trash2,
-  Receipt,
   Save,
   FileSpreadsheet,
   FileText
@@ -29,7 +24,7 @@ import {
   Tooltip, 
   ResponsiveContainer,
 } from 'recharts';
-import { format, startOfMonth, endOfMonth, startOfYear, endOfMonth as endOfYear, isWithinInterval } from 'date-fns';
+import { format, startOfMonth, endOfMonth, startOfYear, isWithinInterval } from 'date-fns';
 import { useState } from 'react';
 import type { Invoice } from '../types';
 import * as XLSX from 'xlsx';

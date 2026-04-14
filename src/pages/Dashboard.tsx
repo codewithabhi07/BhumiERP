@@ -3,22 +3,14 @@ import { useAppStore } from '../store/useAppStore';
 import { Card } from '../components/ui/Card';
 import { cn } from '../utils/cn';
 import { 
-  TrendingUp, 
   Users, 
-  Package, 
   AlertTriangle,
-  ArrowUpRight,
-  ArrowDownRight,
   Receipt,
-  ShoppingCart,
-  Banknote,
   Clock,
   Wallet,
   QrCode
 } from 'lucide-react';
 import { 
-  BarChart, 
-  Bar, 
   XAxis, 
   YAxis, 
   CartesianGrid, 

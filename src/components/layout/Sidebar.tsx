@@ -13,7 +13,7 @@ import {
   ChevronRight,
   X
 } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { cn } from '../../utils/cn';
 
 const menuItems = [

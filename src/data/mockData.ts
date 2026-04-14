@@ -1,0 +1,114 @@
+import type { Product, Customer, Employee, ShopSettings } from '../types';
+
+export const mockProducts: Product[] = [
+  {
+    id: '1',
+    name: 'Slim Fit Cotton Shirt',
+    brand: 'Denim Co',
+    category: 'Shirts',
+    size: 'M',
+    color: 'Navy Blue',
+    season: 'Summer 2026',
+    barcode: '8901234567890',
+    purchasePrice: 800,
+    sellingPrice: 1499,
+    quantity: 25,
+    minQuantity: 5,
+    createdAt: '2026-03-10T10:00:00Z',
+  },
+  {
+    id: '2',
+    name: 'Regular Fit Chinos',
+    brand: 'Urban Wear',
+    category: 'Pants',
+    size: 'L',
+    color: 'Khaki',
+    season: 'Spring 2026',
+    barcode: '8901234567891',
+    purchasePrice: 1200,
+    sellingPrice: 2299,
+    quantity: 12,
+    minQuantity: 5,
+    createdAt: '2026-03-12T11:00:00Z',
+  },
+  {
+    id: '3',
+    name: 'Printed Summer Dress',
+    brand: 'Bloom',
+    category: 'Dresses',
+    size: 'S',
+    color: 'Floral Red',
+    season: 'Summer 2026',
+    barcode: '8901234567892',
+    purchasePrice: 1500,
+    sellingPrice: 2999,
+    quantity: 8,
+    minQuantity: 3,
+    createdAt: '2026-03-15T09:30:00Z',
+  },
+  {
+    id: '4',
+    name: 'Denim Jacket',
+    brand: 'Raw Denim',
+    category: 'Jackets',
+    size: 'XL',
+    color: 'Light Blue',
+    season: 'Autumn 2025',
+    barcode: '8901234567893',
+    purchasePrice: 2200,
+    sellingPrice: 4499,
+    quantity: 4,
+    minQuantity: 5, // Low stock example
+    createdAt: '2026-02-20T14:20:00Z',
+  },
+];
+
+export const mockCustomers: Customer[] = [
+  {
+    id: 'c1',
+    name: 'Rahul Sharma',
+    phone: '9876543210',
+    email: 'rahul@example.com',
+    address: 'Andheri East, Mumbai',
+    totalSpent: 12500,
+    lastVisit: '2026-04-05T12:00:00Z',
+  },
+  {
+    id: 'c2',
+    name: 'Priya Singh',
+    phone: '9822334455',
+    email: 'priya@example.com',
+    address: 'Bandra West, Mumbai',
+    totalSpent: 8900,
+    lastVisit: '2026-04-10T15:30:00Z',
+  },
+];
+
+export const mockEmployees: Employee[] = [
+  {
+    id: 'e1',
+    name: 'Amit Kumar',
+    position: 'Sales Executive',
+    phone: '9123456789',
+    salary: 25000,
+    joinDate: '2025-01-15',
+  },
+  {
+    id: 'e2',
+    name: 'Suresh Raina',
+    position: 'Store Manager',
+    phone: '9234567890',
+    salary: 45000,
+    joinDate: '2024-06-10',
+  },
+];
+
+export const mockSettings: ShopSettings = {
+  shopName: 'BHUMIKA GARMENTS',
+  ownerName: 'Ganesh Mahajan',
+  address: 'Minatai Thakare Complex, Parola, Maharashtra (27)',
+  phone: '9975345692',
+  gstNumber: '27ASAPM9464A1ZS',
+  themeColor: '#7c3aed',
+  currency: 'INR',
+};

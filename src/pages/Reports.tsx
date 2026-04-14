@@ -10,11 +10,10 @@ import {
   Trash2,
   FileSpreadsheet,
   FileText,
-  IndianRupee,
   Save
 } from 'lucide-react';
-import { format, startOfMonth, endOfMonth, startOfYear, isWithinInterval } from 'date-fns';
-import { useState } from 'react';
+import { format, startOfMonth, endOfMonth, isSameDay } from 'date-fns';
+import { useState, useMemo } from 'react';
 import type { Invoice } from '../types';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
@@ -33,40 +32,45 @@ export default function ReportsPage() {
   
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
   const [editFormData, setEditFormData] = useState<Invoice | null>(null);
-  const [exportType, setExportType] = useState<'Monthly' | 'Yearly'>('Monthly');
+  
+  // Filters
+  const [filterType, setFilterType] = useState<'Daily' | 'Monthly' | 'Yearly'>('Monthly');
+  const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [selectedSalesman, setSelectedSalesman] = useState<string>('all');
 
-  const now = new Date();
-  const monthInterval = { start: startOfMonth(now), end: endOfMonth(now) };
-  const yearInterval = { start: startOfYear(now), end: endOfMonth(now) };
+  const filteredInvoices = useMemo(() => {
+    return invoices.filter(inv => {
+      const invDate = new Date(inv.date);
+      const now = new Date(selectedDate);
+      
+      let dateMatch = false;
+      if (filterType === 'Daily') {
+        dateMatch = isSameDay(invDate, now);
+      } else if (filterType === 'Monthly') {
+        dateMatch = invDate.getMonth() === now.getMonth() && invDate.getFullYear() === now.getFullYear();
+      } else {
+        dateMatch = invDate.getFullYear() === now.getFullYear();
+      }
 
-  const filteredInvoices = invoices.filter(inv => {
-    const invDate = new Date(inv.date);
-    return isWithinInterval(invDate, exportType === 'Monthly' ? monthInterval : yearInterval);
-  });
+      const salesmanMatch = selectedSalesman === 'all' || inv.salesmanId === selectedSalesman;
+      
+      return dateMatch && salesmanMatch;
+    });
+  }, [invoices, filterType, selectedDate, selectedSalesman]);
 
-  // Separated Totals
+  // Separated Totals based on filtered data
   const cashTotal = filteredInvoices.filter(inv => inv.paymentMethod === 'Cash').reduce((acc, inv) => acc + inv.totalAmount, 0);
   const upiTotal = filteredInvoices.filter(inv => inv.paymentMethod === 'UPI').reduce((acc, inv) => acc + inv.totalAmount, 0);
   const cardTotal = filteredInvoices.filter(inv => inv.paymentMethod === 'Card').reduce((acc, inv) => acc + inv.totalAmount, 0);
+  const totalRevenue = filteredInvoices.reduce((acc, inv) => acc + inv.totalAmount, 0);
 
   // Salesman Performance Logic
   const salesmanReport = Object.entries(SALESMEN).map(([id, name]) => {
     const sInvoices = filteredInvoices.filter(inv => inv.salesmanId === id);
     const sTotal = sInvoices.reduce((acc, inv) => acc + inv.totalAmount, 0);
-    const sCommission = sTotal * 0.01; // 1% Commission example
+    const sCommission = sTotal * 0.01; // 1% Commission
     return { id, name, total: sTotal, count: sInvoices.length, commission: sCommission };
   });
-
-  const recentSalesData = invoices.map(inv => ({
-    id: inv.id,
-    no: inv.invoiceNumber,
-    date: new Date(inv.date).toLocaleDateString(),
-    customer: inv.customerName || 'Cash Customer',
-    amount: inv.totalAmount,
-    method: inv.paymentMethod,
-    salesman: inv.salesmanName || 'N/A',
-    raw: inv
-  }));
 
   const handleDeleteBill = (inv: Invoice) => {
     if (window.confirm(`Are you sure you want to delete Bill ${inv.invoiceNumber}? Stock will be reverted.`)) {
@@ -93,7 +97,6 @@ export default function ReportsPage() {
     }
   };
 
-  // Export to Excel
   const exportToExcel = () => {
     const data = filteredInvoices.map(inv => ({
       'Bill No': inv.invoiceNumber,
@@ -106,7 +109,7 @@ export default function ReportsPage() {
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Sales Report");
-    XLSX.writeFile(wb, `Sales_${exportType}_${format(now, 'yyyy-MM-dd')}.xlsx`);
+    XLSX.writeFile(wb, `Sales_${filterType}_${selectedDate}.xlsx`);
   };
 
   const exportToPdf = () => {
@@ -116,21 +119,21 @@ export default function ReportsPage() {
     doc.text(settings.shopName, 105, 15, { align: 'center' });
     doc.setFontSize(12);
     doc.setTextColor(100);
-    doc.text(`${exportType} Report - ${format(now, 'MMM yyyy')}`, 105, 22, { align: 'center' });
+    doc.text(`${filterType} Report - ${selectedDate}`, 105, 22, { align: 'center' });
     
     (doc as any).autoTable({
       startY: 35,
-      head: [['Bill No', 'Customer', 'Salesman', 'Mode', 'Amount']],
-      body: filteredInvoices.map(inv => [inv.invoiceNumber, inv.customerName || 'Cash', inv.salesmanName || '-', inv.paymentMethod, inv.totalAmount]),
+      head: [['Bill No', 'Date', 'Customer', 'Salesman', 'Mode', 'Amount']],
+      body: filteredInvoices.map(inv => [inv.invoiceNumber, format(new Date(inv.date), 'dd-MM-yy'), inv.customerName || 'Cash', inv.salesmanName || '-', inv.paymentMethod, inv.totalAmount]),
       theme: 'grid',
       headStyles: { fillStyle: [124, 58, 237] }
     });
-    doc.save(`Report_${exportType}.pdf`);
+    doc.save(`Report_${filterType}.pdf`);
   };
 
   // Leave Tracking Logic
-  const monthStart = startOfMonth(new Date());
-  const monthEnd = endOfMonth(new Date());
+  const monthStart = startOfMonth(new Date(selectedDate));
+  const monthEnd = endOfMonth(new Date(selectedDate));
   const leaveSummary = employees.map(emp => {
     const empAttendance = attendance.filter(a => a.employeeId === emp.id && new Date(a.date) >= monthStart && new Date(a.date) <= monthEnd);
     const absentCount = empAttendance.filter(a => a.status === 'Absent').length;
@@ -141,43 +144,76 @@ export default function ReportsPage() {
 
   return (
     <div className="space-y-6 pb-10">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6">
         <div>
-          <h1 className="text-3xl font-black text-slate-900 tracking-tight italic uppercase">
+          <h1 className="text-3xl font-black text-slate-900 tracking-tight italic uppercase leading-none">
             Business <span className="text-primary-600">Intelligence</span>
           </h1>
-          <div className="flex items-center gap-2 mt-1">
-            <select value={exportType} onChange={(e) => setExportType(e.target.value as any)} className="text-xs font-bold uppercase tracking-widest text-primary-600 bg-primary-50 px-2 py-1 rounded-lg border-none focus:ring-0 cursor-pointer">
-              <option value="Monthly">This Month</option>
-              <option value="Yearly">This Year</option>
-            </select>
-            <p className="text-sm font-bold text-slate-500 uppercase tracking-widest">Collections</p>
-          </div>
+          <p className="text-sm font-bold text-slate-500 uppercase tracking-widest mt-2">Date & Salesman Analytics</p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" className="gap-2 rounded-xl font-black uppercase text-xs border-2" onClick={exportToExcel}><FileSpreadsheet className="h-4 w-4 text-emerald-600" /> Excel</Button>
-          <Button variant="outline" className="gap-2 rounded-xl font-black uppercase text-xs border-2" onClick={exportToPdf}><FileText className="h-4 w-4 text-rose-600" /> PDF</Button>
+
+        <div className="flex flex-wrap items-center gap-3 bg-white p-3 rounded-[1.5rem] shadow-xl border border-slate-100">
+          <div className="flex flex-col gap-1">
+            <span className="text-[10px] font-black text-slate-400 uppercase ml-1">Period</span>
+            <select 
+              value={filterType} 
+              onChange={(e) => setFilterType(e.target.value as any)} 
+              className="text-xs font-black uppercase bg-slate-50 border-none rounded-xl h-10 px-3 focus:ring-2 focus:ring-primary-500"
+            >
+              <option value="Daily">Daily</option>
+              <option value="Monthly">Monthly</option>
+              <option value="Yearly">Yearly</option>
+            </select>
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <span className="text-[10px] font-black text-slate-400 uppercase ml-1">Select Date</span>
+            <input 
+              type="date" 
+              value={selectedDate} 
+              onChange={(e) => setSelectedDate(e.target.value)}
+              className="text-xs font-black uppercase bg-slate-50 border-none rounded-xl h-10 px-3 focus:ring-2 focus:ring-primary-500"
+            />
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <span className="text-[10px] font-black text-slate-400 uppercase ml-1">Salesman</span>
+            <select 
+              value={selectedSalesman} 
+              onChange={(e) => setSelectedSalesman(e.target.value)}
+              className="text-xs font-black uppercase bg-slate-50 border-none rounded-xl h-10 px-3 focus:ring-2 focus:ring-primary-500"
+            >
+              <option value="all">All Staff</option>
+              {Object.entries(SALESMEN).map(([id, name]) => <option key={id} value={id}>{name}</option>)}
+            </select>
+          </div>
+
+          <div className="flex items-end h-10 mt-5">
+            <div className="flex gap-2">
+              <Button variant="outline" className="h-10 w-10 p-0 rounded-xl border-2" onClick={exportToExcel} title="Export Excel"><FileSpreadsheet className="h-5 w-5 text-emerald-600" /></Button>
+              <Button variant="outline" className="h-10 w-10 p-0 rounded-xl border-2" onClick={exportToPdf} title="Export PDF"><FileText className="h-5 w-5 text-rose-600" /></Button>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="rounded-3xl bg-white p-6 shadow-xl border border-slate-100"><p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Cash</p><h3 className="text-3xl font-black text-emerald-600 mt-1">₹{cashTotal.toLocaleString()}</h3></div>
-        <div className="rounded-3xl bg-white p-6 shadow-xl border border-slate-100"><p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">UPI</p><h3 className="text-3xl font-black text-primary-600 mt-1">₹{upiTotal.toLocaleString()}</h3></div>
-        <div className="rounded-3xl bg-white p-6 shadow-xl border border-slate-100"><p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Card</p><h3 className="text-3xl font-black text-blue-600 mt-1">₹{cardTotal.toLocaleString()}</h3></div>
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="rounded-3xl bg-white p-6 shadow-xl border-b-4 border-b-emerald-500"><p className="text-[10px] font-black text-slate-400 uppercase">Cash</p><h3 className="text-2xl font-black text-emerald-600 mt-1">₹{cashTotal.toLocaleString()}</h3></div>
+        <div className="rounded-3xl bg-white p-6 shadow-xl border-b-4 border-b-primary-500"><p className="text-[10px] font-black text-slate-400 uppercase">UPI</p><h3 className="text-2xl font-black text-primary-600 mt-1">₹{upiTotal.toLocaleString()}</h3></div>
+        <div className="rounded-3xl bg-white p-6 shadow-xl border-b-4 border-b-blue-500"><p className="text-[10px] font-black text-slate-400 uppercase">Card</p><h3 className="text-2xl font-black text-blue-600 mt-1">₹{cardTotal.toLocaleString()}</h3></div>
+        <div className="rounded-3xl bg-slate-900 p-6 shadow-xl border-none"><p className="text-[10px] font-black text-slate-400 uppercase">Grand Total</p><h3 className="text-2xl font-black text-primary-400 mt-1">₹{totalRevenue.toLocaleString()}</h3></div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Salesman Performance Report */}
-        <Card title="Salesman Report" description={`${exportType} Performance & Commission (1%)`}>
-          <Table headers={['Salesman', 'Total Sales', 'Bills', 'Commission']}>
+        <Card title="Salesman Commission" description="1% Incentive Report">
+          <Table headers={['Salesman', 'Total Sales', 'Commission']}>
             {salesmanReport.map((row) => (
               <TableRow key={row.id}>
                 <TableCell className="font-bold text-slate-900 uppercase text-xs">{row.name}</TableCell>
                 <TableCell className="font-black text-primary-600 tracking-tight">₹{row.total.toLocaleString()}</TableCell>
-                <TableCell className="font-bold text-slate-500">{row.count}</TableCell>
                 <TableCell>
-                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-1 text-[10px] font-black text-emerald-700 uppercase">
-                    <IndianRupee className="h-3 w-3" /> {row.commission.toFixed(0)}
+                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-700 uppercase">
+                    ₹{row.commission.toFixed(0)}
                   </span>
                 </TableCell>
               </TableRow>
@@ -185,7 +221,7 @@ export default function ReportsPage() {
           </Table>
         </Card>
 
-        <Card title="Staff Leaves" description="Monthly Summary">
+        <Card title="Staff Leaves" description="Monthly Deduction Tracker">
           <Table headers={['Employee', 'Abs', 'Leave', 'LOP']}>
             {leaveSummary.map((row, idx) => (
               <TableRow key={idx}>
@@ -199,18 +235,19 @@ export default function ReportsPage() {
         </Card>
       </div>
 
-      <Card title="Sales Management">
-        <Table headers={['Bill No', 'Customer', 'Amount', 'Salesman', 'Actions']}>
-          {recentSalesData.slice().reverse().map((row) => (
-            <TableRow key={row.id}>
-              <TableCell className="font-black text-primary-600">{row.no}</TableCell>
-              <TableCell className="font-bold text-slate-900 uppercase text-[10px]">{row.customer}</TableCell>
-              <TableCell className="font-black text-slate-900">₹{row.amount}</TableCell>
-              <TableCell className="text-xs font-bold text-slate-500">{row.salesman}</TableCell>
+      <Card title="Filtered Sales Log">
+        <Table headers={['Bill No', 'Date', 'Customer', 'Amount', 'Salesman', 'Actions']}>
+          {filteredInvoices.slice().reverse().map((inv) => (
+            <TableRow key={inv.id}>
+              <TableCell className="font-black text-primary-600">{inv.invoiceNumber}</TableCell>
+              <TableCell className="text-xs font-bold text-slate-500">{format(new Date(inv.date), 'dd-MM-yy')}</TableCell>
+              <TableCell className="font-bold text-slate-900 uppercase text-[10px]">{inv.customerName}</TableCell>
+              <TableCell className="font-black text-slate-900">₹{inv.totalAmount}</TableCell>
+              <TableCell className="text-xs font-bold text-slate-500">{inv.salesmanName}</TableCell>
               <TableCell>
                 <div className="flex gap-2">
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-primary-600" onClick={() => handleEditClick(row.raw)}><Edit2 className="h-3.5 w-3.5" /></Button>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-rose-400" onClick={() => handleDeleteBill(row.raw)}><Trash2 className="h-3.5 w-3.5" /></Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-primary-600" onClick={() => handleEditClick(inv)}><Edit2 className="h-3.5 w-3.5" /></Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-rose-400" onClick={() => handleDeleteBill(inv)}><Trash2 className="h-3.5 w-3.5" /></Button>
                 </div>
               </TableCell>
             </TableRow>
@@ -218,6 +255,7 @@ export default function ReportsPage() {
         </Table>
       </Card>
 
+      {/* Edit Bill Modal */}
       <Modal isOpen={!!editingInvoice} onClose={() => setEditingInvoice(null)} title={`Correction: ${editingInvoice?.invoiceNumber}`} size="lg">
         {editFormData && (
           <div className="space-y-4">
@@ -250,13 +288,10 @@ export default function ReportsPage() {
                 }} />
               </div>
             </div>
-            <div className="p-4 bg-slate-900 rounded-2xl text-center">
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Final Settlement Amount</p>
-              <p className="text-3xl font-black text-primary-400 tracking-tighter italic">₹{editFormData.totalAmount.toFixed(0)}</p>
+            <div className="p-4 bg-slate-900 rounded-2xl text-center text-primary-400">
+              <p className="text-3xl font-black italic tracking-tighter">₹{editFormData.totalAmount.toFixed(0)}</p>
             </div>
-            <Button className="w-full uppercase font-black tracking-widest text-xs h-14 rounded-2xl gap-2 shadow-lg" onClick={handleSaveEdit}>
-              <Save className="h-5 w-5" /> Save Corrections
-            </Button>
+            <Button className="w-full uppercase font-black tracking-widest text-xs h-14 rounded-2xl gap-2 shadow-lg" onClick={handleSaveEdit}><Save className="h-5 w-5" /> Save Corrections</Button>
           </div>
         )}
       </Modal>

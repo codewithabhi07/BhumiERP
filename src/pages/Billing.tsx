@@ -15,7 +15,10 @@ import {
   Keyboard, 
   CheckCircle2, 
   Circle,
-  UserRound
+  History,
+  Edit2,
+  Save,
+  X
 } from 'lucide-react';
 import type { Product, InvoiceItem, Invoice } from '../types';
 import { InvoicePreview } from '../components/InvoicePreview';
@@ -43,7 +46,7 @@ const SALESMEN: Record<string, string> = {
 
 export default function BillingPage() {
   const { products, updateStock } = useProductStore();
-  const { addInvoice, settings } = useAppStore();
+  const { addInvoice, invoices, updateInvoice, settings } = useAppStore();
   
   const [searchTerm, setSearchTerm] = useState('');
   const [cart, setCart] = useState<InvoiceItem[]>([]);
@@ -52,13 +55,14 @@ export default function BillingPage() {
   
   // Totals
   const [discountPercent, setDiscountPercent] = useState(0);
-  const [rounding, setRounding] = useState(0); // Manual adjustment
+  const [rounding, setRounding] = useState(0);
   
   const [paymentMethod, setPaymentMethod] = useState<'Cash' | 'Card' | 'UPI'>('Cash');
   const [lastInvoice, setLastInvoice] = useState<Invoice | null>(null);
 
-  // Salesman Selection
-  const [isSalesmanModalOpen, setIsSalesmanModalOpen] = useState(false);
+  // Bill History & Editing
+  const [showHistory, setShowHistory] = useState(false);
+  const [editingInvoiceId, setEditingInvoiceId] = useState<string | null>(null);
 
   // GST State
   const [isGstEnabled, setIsGstEnabled] = useState(false);
@@ -67,7 +71,7 @@ export default function BillingPage() {
   // Manual entry state
   const [isManualEntry, setIsManualEntry] = useState(false);
   const [manualItem, setManualItem] = useState({
-    name: '', price: 0, quantity: 1, color: 'Mix'
+    name: '', price: 0, quantity: 1, color: 'Mix', salesmanId: '1'
   });
 
   // Refs for keyboard navigation
@@ -75,20 +79,22 @@ export default function BillingPage() {
   const manualNameRef = useRef<HTMLInputElement>(null);
   const manualPriceRef = useRef<HTMLInputElement>(null);
   const manualQtyRef = useRef<HTMLInputElement>(null);
+  const manualSmanRef = useRef<HTMLInputElement>(null);
   const custNameRef = useRef<HTMLInputElement>(null);
   const custPhoneRef = useRef<HTMLInputElement>(null);
   const discountRef = useRef<HTMLInputElement>(null);
   const roundingRef = useRef<HTMLInputElement>(null);
   const generateBillBtnRef = useRef<HTMLButtonElement>(null);
-  const salesmanInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (isManualEntry) {
-      manualNameRef.current?.focus();
-    } else if (!isSalesmanModalOpen) {
-      searchInputRef.current?.focus();
+    if (!showHistory) {
+      if (isManualEntry) {
+        manualNameRef.current?.focus();
+      } else {
+        searchInputRef.current?.focus();
+      }
     }
-  }, [isManualEntry, isSalesmanModalOpen]);
+  }, [isManualEntry, showHistory]);
 
   const filteredProducts = products.filter(p => 
     p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -102,7 +108,8 @@ export default function BillingPage() {
     } else {
       setCart([...cart, {
         productId: product.id, name: product.name, color: product.color,
-        price: product.sellingPrice, quantity: 1, discount: 0, total: product.sellingPrice
+        price: product.sellingPrice, quantity: 1, discount: 0, total: product.sellingPrice,
+        salesmanId: '1', salesmanName: SALESMEN['1']
       }]);
     }
     setSearchTerm('');
@@ -122,9 +129,10 @@ export default function BillingPage() {
     setCart([...cart, {
       productId: `manual-${Date.now()}`, name: manualItem.name,
       color: manualItem.color, price: manualItem.price, quantity: manualItem.quantity,
-      discount: 0, total: manualItem.price * manualItem.quantity
+      discount: 0, total: manualItem.price * manualItem.quantity,
+      salesmanId: manualItem.salesmanId, salesmanName: SALESMEN[manualItem.salesmanId] || 'N/A'
     }]);
-    setManualItem({ name: '', price: 0, quantity: 1, color: 'Mix' });
+    setManualItem({ name: '', price: 0, quantity: 1, color: 'Mix', salesmanId: '1' });
     manualNameRef.current?.focus();
   };
 
@@ -132,6 +140,9 @@ export default function BillingPage() {
     setCart(cart.map(item => {
       if (item.productId === id) {
         const updated = { ...item, ...updates };
+        if (updates.salesmanId) {
+          updated.salesmanName = SALESMEN[updates.salesmanId] || 'N/A';
+        }
         updated.total = updated.quantity * updated.price;
         return updated;
       }
@@ -147,27 +158,15 @@ export default function BillingPage() {
   const discountAmount = useMemo(() => subTotal * (discountPercent / 100), [subTotal, discountPercent]);
   const tax = useMemo(() => isGstEnabled ? ((subTotal - discountAmount) * (gstPercentage / 100)) : 0, [subTotal, discountAmount, isGstEnabled, gstPercentage]);
   
-  // Total before rounding
   const rawTotal = subTotal - discountAmount + tax;
-  // Total after rounding/settlement
   const totalAmount = rawTotal + rounding;
 
-  const handleGenerateClick = () => {
+  const handleCheckout = () => {
     if (cart.length === 0) return;
-    setIsSalesmanModalOpen(true);
-    setTimeout(() => salesmanInputRef.current?.focus(), 100);
-  };
 
-  const handleSalesmanSelect = (id: string) => {
-    if (SALESMEN[id]) {
-      finalizeInvoice(id, SALESMEN[id]);
-    }
-  };
-
-  const finalizeInvoice = (sId: string, sName: string) => {
     const invoice: Invoice = {
-      id: Date.now().toString(),
-      invoiceNumber: `INV-${Math.floor(1000 + Math.random() * 9000)}`,
+      id: editingInvoiceId || Date.now().toString(),
+      invoiceNumber: editingInvoiceId ? invoices.find(inv => inv.id === editingInvoiceId)!.invoiceNumber : `INV-${Math.floor(1000 + Math.random() * 9000)}`,
       customerName: customerName || 'Cash Customer',
       customerPhone,
       items: cart,
@@ -177,19 +176,21 @@ export default function BillingPage() {
       rounding,
       totalAmount,
       paymentMethod,
-      salesmanId: sId,
-      salesmanName: sName,
       date: new Date().toISOString()
     };
 
-    addInvoice(invoice);
-    setLastInvoice(invoice);
-    
-    cart.forEach(item => {
-      if (!item.productId.startsWith('manual-')) {
-        updateStock(item.productId, -item.quantity);
-      }
-    });
+    if (editingInvoiceId) {
+      updateInvoice(editingInvoiceId, invoice);
+      alert('Bill updated successfully!');
+    } else {
+      addInvoice(invoice);
+      setLastInvoice(invoice);
+      cart.forEach(item => {
+        if (!item.productId.startsWith('manual-')) {
+          updateStock(item.productId, -item.quantity);
+        }
+      });
+    }
 
     // Reset
     setCart([]);
@@ -199,7 +200,19 @@ export default function BillingPage() {
     setRounding(0);
     setPaymentMethod('Cash');
     setIsGstEnabled(false);
-    setIsSalesmanModalOpen(false);
+    setEditingInvoiceId(null);
+  };
+
+  const loadBillForEditing = (inv: Invoice) => {
+    setCart(inv.items);
+    setCustomerName(inv.customerName || '');
+    setCustomerPhone(inv.customerPhone || '');
+    setDiscountPercent((inv.discount / inv.subTotal) * 100);
+    setRounding(inv.rounding);
+    setPaymentMethod(inv.paymentMethod);
+    setIsGstEnabled(inv.tax > 0);
+    setEditingInvoiceId(inv.id);
+    setShowHistory(false);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent, nextRef?: React.RefObject<any>, action?: () => void) => {
@@ -217,7 +230,16 @@ export default function BillingPage() {
       )}
       
       <div className="col-span-12 lg:col-span-8 space-y-6">
-        <Card title="Billing Panel" description="Scanner & Manual Entry System">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-black text-slate-900 uppercase italic tracking-tight">
+            Billing <span className="text-primary-600">Terminal</span>
+          </h2>
+          <Button variant="outline" className="gap-2 rounded-xl h-10 border-2" onClick={() => setShowHistory(true)}>
+            <History className="h-4 w-4" /> Previous Bills
+          </Button>
+        </div>
+
+        <Card title="Billing Panel" description="Scanner & Manual Entry System" className="shadow-2xl border-none">
           <div className="flex flex-col gap-4">
             <div className="flex gap-2">
               <div className="relative flex-1">
@@ -234,19 +256,19 @@ export default function BillingPage() {
                       custNameRef.current?.focus();
                     }
                   }}
-                  className="pl-10 h-11"
+                  className="pl-10 h-12 rounded-2xl bg-slate-50 border-slate-100"
                   disabled={isManualEntry}
                 />
                 {searchTerm && filteredProducts.length > 0 && (
-                  <div className="absolute top-full z-10 mt-2 w-full rounded-lg border border-slate-200 bg-white shadow-xl">
+                  <div className="absolute top-full z-10 mt-2 w-full rounded-2xl border border-slate-200 bg-white shadow-2xl">
                     {filteredProducts.map(p => (
                       <button
                         key={p.id} onClick={() => addToCart(p)}
-                        className="flex w-full items-center justify-between p-4 hover:bg-slate-50 border-b last:border-0 border-slate-100"
+                        className="flex w-full items-center justify-between p-4 hover:bg-primary-50 border-b last:border-0 border-slate-100 transition-colors"
                       >
                         <div className="flex flex-col items-start text-left">
-                          <span className="font-semibold text-slate-900 uppercase text-xs tracking-tight">{p.name}</span>
-                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{p.brand} | {p.color}</span>
+                          <span className="font-black text-slate-900 uppercase text-xs tracking-tight">{p.name}</span>
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{p.brand}</span>
                         </div>
                         <div className="flex items-center gap-4">
                           <span className="text-sm font-black text-primary-600 tracking-tighter">₹{p.sellingPrice}</span>
@@ -257,25 +279,24 @@ export default function BillingPage() {
                   </div>
                 )}
               </div>
-              <Button variant={isManualEntry ? 'primary' : 'outline'} className="gap-2 shrink-0 h-11 rounded-xl" onClick={() => setIsManualEntry(!isManualEntry)}>
-                <Keyboard className="h-4 w-4" /> Manual Entry (F2)
+              <Button variant={isManualEntry ? 'primary' : 'outline'} className="gap-2 shrink-0 h-12 rounded-2xl border-2" onClick={() => setIsManualEntry(!isManualEntry)}>
+                <Keyboard className="h-5 w-5" /> Manual Entry (F2)
               </Button>
             </div>
 
             {isManualEntry && (
-              <div className="bg-slate-50 p-4 rounded-3xl border border-slate-200 animate-in fade-in slide-in-from-top-2 duration-200 shadow-inner">
+              <div className="bg-gradient-to-br from-slate-50 to-white p-5 rounded-[2rem] border border-slate-200 animate-in fade-in slide-in-from-top-2 duration-200 shadow-inner">
                 <div className="grid grid-cols-12 gap-3">
-                  <div className="col-span-12 md:col-span-5 relative">
+                  <div className="col-span-12 md:col-span-4 relative">
                     <Input 
-                      ref={manualNameRef}
-                      label="Item Name (1-42 shortcuts)" 
+                      ref={manualNameRef} label="Item Name (1-42)" 
                       placeholder="Type number e.g. 1" 
                       value={manualItem.name}
                       onChange={e => handleManualNameChange(e.target.value)}
                       onKeyDown={(e) => handleKeyDown(e, manualPriceRef)}
                     />
                   </div>
-                  <div className="col-span-6 md:col-span-3">
+                  <div className="col-span-4 md:col-span-2">
                     <Input 
                       ref={manualPriceRef} label="Price" type="number" 
                       value={manualItem.price || ''}
@@ -283,16 +304,24 @@ export default function BillingPage() {
                       onKeyDown={(e) => handleKeyDown(e, manualQtyRef)}
                     />
                   </div>
-                  <div className="col-span-6 md:col-span-2">
+                  <div className="col-span-4 md:col-span-2">
                     <Input 
                       ref={manualQtyRef} label="Qty" type="number" 
                       value={manualItem.quantity}
                       onChange={e => setManualItem({...manualItem, quantity: Number(e.target.value)})}
+                      onKeyDown={(e) => handleKeyDown(e, manualSmanRef)}
+                    />
+                  </div>
+                  <div className="col-span-4 md:col-span-2">
+                    <Input 
+                      ref={manualSmanRef} label="S.Man (1-4)" type="number" 
+                      value={manualItem.salesmanId}
+                      onChange={e => setManualItem({...manualItem, salesmanId: e.target.value})}
                       onKeyDown={(e) => handleKeyDown(e, undefined, addManualToCart)}
                     />
                   </div>
                   <div className="col-span-12 md:col-span-2 flex items-end">
-                    <Button className="w-full h-10 rounded-xl font-black uppercase text-xs" onClick={addManualToCart} disabled={!manualItem.name || manualItem.price <= 0}>Add</Button>
+                    <Button className="w-full h-10 rounded-xl font-black uppercase text-xs shadow-lg shadow-primary-100" onClick={addManualToCart} disabled={!manualItem.name || manualItem.price <= 0}>Add</Button>
                   </div>
                 </div>
               </div>
@@ -300,45 +329,47 @@ export default function BillingPage() {
           </div>
         </Card>
 
-        <Card title="Current Cart" className="overflow-hidden shadow-xl border-none">
-          <Table headers={['Item Description', 'Price (₹)', 'Qty', 'Total', '']}>
+        <Card title="Current Cart" className="overflow-hidden shadow-2xl border-none">
+          <Table headers={['Item Description', 'Price (₹)', 'Qty', 'S.Man', 'Total', '']}>
             {cart.map(item => (
               <TableRow key={item.productId} className="group">
                 <TableCell>
                   <input 
-                    type="text"
-                    value={item.name}
+                    type="text" value={item.name}
                     onChange={(e) => updateCartItem(item.productId, { name: e.target.value })}
-                    className="w-full bg-transparent font-bold text-slate-900 uppercase text-xs focus:outline-none focus:border-b-2 border-primary-500 pb-1"
+                    className="w-full bg-transparent font-black text-slate-900 uppercase text-xs focus:outline-none focus:border-b-2 border-primary-500 pb-1"
                   />
                 </TableCell>
                 <TableCell>
                   <input 
-                    type="number"
-                    value={item.price || ''}
+                    type="number" value={item.price || ''}
                     onChange={(e) => updateCartItem(item.productId, { price: Number(e.target.value) })}
                     className="w-20 bg-transparent font-black text-slate-900 focus:outline-none focus:border-b-2 border-primary-500 pb-1"
                   />
                 </TableCell>
                 <TableCell>
-                  <div className="flex items-center gap-2">
-                    <input 
-                      type="number"
-                      value={item.quantity}
-                      onChange={(e) => updateCartItem(item.productId, { quantity: Number(e.target.value) })}
-                      className="w-12 bg-transparent text-center font-black text-slate-900 focus:outline-none focus:border-b-2 border-primary-500 pb-1"
-                    />
-                  </div>
+                  <input 
+                    type="number" value={item.quantity}
+                    onChange={(e) => updateCartItem(item.productId, { quantity: Number(e.target.value) })}
+                    className="w-12 bg-transparent text-center font-black text-slate-900 focus:outline-none focus:border-b-2 border-primary-500 pb-1"
+                  />
                 </TableCell>
-                <TableCell className="font-black text-primary-600">₹{item.total.toFixed(0)}</TableCell>
-                <TableCell><Button variant="ghost" size="icon" className="h-8 w-8 text-rose-400 group-hover:scale-110" onClick={() => removeFromCart(item.productId)}><Trash2 className="h-4 w-4" /></Button></TableCell>
+                <TableCell>
+                  <input 
+                    type="text" value={item.salesmanId}
+                    onChange={(e) => updateCartItem(item.productId, { salesmanId: e.target.value })}
+                    className="w-8 bg-transparent text-center font-black text-primary-600 focus:outline-none focus:border-b-2 border-primary-500 pb-1"
+                  />
+                </TableCell>
+                <TableCell className="font-black text-slate-900">₹{item.total.toFixed(0)}</TableCell>
+                <TableCell><Button variant="ghost" size="icon" className="h-8 w-8 text-rose-400 hover:bg-rose-50" onClick={() => removeFromCart(item.productId)}><Trash2 className="h-4 w-4" /></Button></TableCell>
               </TableRow>
             ))}
             {cart.length === 0 && (
               <TableRow>
-                <TableCell colSpan={5} className="py-20 text-center opacity-30">
+                <TableCell colSpan={6} className="py-20 text-center opacity-30">
                   <ShoppingCart className="h-12 w-12 mx-auto mb-2" />
-                  <p className="font-black uppercase tracking-widest text-[10px]">No items added yet</p>
+                  <p className="font-black uppercase tracking-widest text-[10px]">Cart is empty</p>
                 </TableCell>
               </TableRow>
             )}
@@ -354,15 +385,18 @@ export default function BillingPage() {
           </div>
         </Card>
 
-        <Card title="Order Summary" className="bg-slate-900 text-white border-none shadow-2xl">
-          <div className="space-y-4">
-            <div className="flex justify-between text-[10px] font-black uppercase text-slate-400 tracking-[0.2em]">
-              <span>Gross Total</span>
-              <span className="text-white">₹{subTotal.toFixed(2)}</span>
+        <Card title="Order Summary" className="bg-slate-900 text-white border-none shadow-2xl overflow-hidden relative">
+          <div className="absolute top-0 right-0 p-8 opacity-5">
+            <Receipt className="h-32 w-32" />
+          </div>
+          <div className="space-y-4 relative z-10">
+            <div className="flex justify-between p-4 rounded-2xl bg-white/5 border border-white/5">
+              <span className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em]">Gross Total</span>
+              <span className="text-xl font-black text-white">₹{subTotal.toFixed(2)}</span>
             </div>
 
-            <div className="space-y-3 pt-4 pb-4 border-y border-white/10">
-              <div className="flex items-center justify-between">
+            <div className="space-y-3 pt-2 pb-2">
+              <div className="flex items-center justify-between px-1">
                 <span className="text-xs font-bold uppercase text-slate-400">Discount (%)</span>
                 <div className="flex items-center gap-2">
                   <input 
@@ -370,44 +404,42 @@ export default function BillingPage() {
                     type="number" value={discountPercent || ''}
                     onChange={e => setDiscountPercent(Number(e.target.value))}
                     onKeyDown={(e) => handleKeyDown(e, roundingRef)}
-                    className="w-16 text-right font-black text-rose-400 focus:outline-none bg-white/5 border border-white/10 rounded px-2 py-1 text-sm"
+                    className="w-16 text-right font-black text-rose-400 focus:outline-none bg-white/5 border border-white/10 rounded-xl px-2 py-1.5 text-sm"
                   />
                   <span className="text-xs font-black text-rose-400">%</span>
                 </div>
               </div>
               
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold uppercase text-slate-400">Adjustment / Rounding</span>
+              <div className="flex items-center justify-between px-1">
+                <span className="text-xs font-bold uppercase text-slate-400">Rounding</span>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-slate-500">{rounding >= 0 ? '+' : ''}</span>
                   <input 
                     ref={roundingRef}
                     type="number" value={rounding || ''}
                     onChange={e => setRounding(Number(e.target.value))}
                     onKeyDown={(e) => handleKeyDown(e, generateBillBtnRef)}
-                    className="w-20 text-right font-black text-emerald-400 focus:outline-none bg-white/5 border border-white/10 rounded px-2 py-1 text-sm"
+                    className="w-20 text-right font-black text-emerald-400 focus:outline-none bg-white/5 border border-white/10 rounded-xl px-2 py-1.5 text-sm"
                     placeholder="+/- amt"
                   />
                 </div>
               </div>
             </div>
 
-            <div className="flex items-center justify-between cursor-pointer group" onClick={() => setIsGstEnabled(!isGstEnabled)}>
+            <div className="flex items-center justify-between cursor-pointer group px-1" onClick={() => setIsGstEnabled(!isGstEnabled)}>
               <span className="text-xs font-bold uppercase text-slate-400 group-hover:text-primary-400 transition-colors">Apply GST (12%)</span>
               {isGstEnabled ? <CheckCircle2 className="h-5 w-5 text-primary-500" /> : <Circle className="h-5 w-5 text-white/20" />}
             </div>
 
             <div className="my-2 h-px bg-white/10" />
-            <div className="flex justify-between items-end">
+            <div className="flex justify-between items-end px-1">
               <div>
-                <p className="text-[10px] font-black uppercase text-slate-500 tracking-[0.2em] mb-1">Final Settlement</p>
-                <p className="text-4xl font-black italic tracking-tighter text-primary-400 leading-none">₹{totalAmount.toFixed(0)}</p>
+                <p className="text-[10px] font-black uppercase text-slate-500 tracking-[0.2em] mb-1">Settlement</p>
+                <p className="text-5xl font-black italic tracking-tighter text-primary-400 leading-none">₹{totalAmount.toFixed(0)}</p>
               </div>
               <div className="text-right">
-                <p className="text-[10px] font-bold text-slate-500 uppercase italic">Pay Mode</p>
-                <div className="flex gap-1 mt-1">
+                <div className="flex gap-1">
                   {['Cash', 'Card', 'UPI'].map(m => (
-                    <button key={m} onClick={() => setPaymentMethod(m as any)} className={cn("px-2 py-1 rounded text-[9px] font-black uppercase border transition-all", paymentMethod === m ? "bg-primary-600 border-primary-600 text-white" : "border-white/10 text-slate-500 hover:text-white")}>
+                    <button key={m} onClick={() => setPaymentMethod(m as any)} className={cn("px-2.5 py-1.5 rounded-lg text-[9px] font-black uppercase border transition-all", paymentMethod === m ? "bg-primary-600 border-primary-600 text-white shadow-lg shadow-primary-600/20" : "border-white/10 text-slate-500 hover:text-white hover:bg-white/5")}>
                       {m}
                     </button>
                   ))}
@@ -415,35 +447,36 @@ export default function BillingPage() {
               </div>
             </div>
 
-            <Button ref={generateBillBtnRef} className="w-full h-16 text-xl mt-4 gap-3 rounded-3xl font-black uppercase tracking-tighter shadow-2xl bg-primary-600 hover:bg-primary-700 hover:scale-[1.02] transition-all" disabled={cart.length === 0} onClick={handleGenerateClick}>
-              <Receipt className="h-7 w-7" /> Generate Bill
+            <Button ref={generateBillBtnRef} className={cn("w-full h-16 text-xl mt-4 gap-3 rounded-[1.5rem] font-black uppercase tracking-tighter shadow-2xl transition-all", editingInvoiceId ? "bg-emerald-600 hover:bg-emerald-700" : "bg-primary-600 hover:bg-primary-700 hover:scale-[1.02]")} disabled={cart.length === 0} onClick={handleCheckout}>
+              {editingInvoiceId ? <Save className="h-7 w-7" /> : <Receipt className="h-7 w-7" />}
+              {editingInvoiceId ? 'Update Bill' : 'Generate Bill'}
             </Button>
+            {editingInvoiceId && (
+              <Button variant="ghost" className="w-full text-slate-500 uppercase font-black text-xs h-10" onClick={() => { setEditingInvoiceId(null); setCart([]); setCustomerName(''); setCustomerPhone(''); }}>
+                Cancel Edit
+              </Button>
+            )}
           </div>
         </Card>
       </div>
 
-      {/* Salesman Selection Modal */}
-      <Modal isOpen={isSalesmanModalOpen} onClose={() => setIsSalesmanModalOpen(false)} title="Select Salesman" size="sm">
+      {/* Bill History Modal */}
+      <Modal isOpen={showHistory} onClose={() => setShowHistory(false)} title="Previous Bills" size="lg">
         <div className="space-y-4">
-          <Input 
-            ref={salesmanInputRef} placeholder="Type Number 1-4" 
-            onChange={e => handleSalesmanSelect(e.target.value)}
-            className="text-center text-3xl font-black tracking-[0.5em] h-16 rounded-2xl bg-slate-50 border-2 border-slate-200"
-          />
-          <div className="grid grid-cols-1 gap-2">
-            {Object.entries(SALESMEN).map(([id, name]) => (
-              <button 
-                key={id} onClick={() => finalizeInvoice(id, name)}
-                className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 border-2 border-transparent hover:border-primary-500 hover:bg-primary-50 group transition-all"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-full bg-white flex items-center justify-center font-black text-slate-400 group-hover:text-primary-600 shadow-sm border border-slate-100">{id}</div>
-                  <span className="font-black text-slate-700 uppercase tracking-tight group-hover:text-primary-700">{name}</span>
-                </div>
-                <UserRound className="h-5 w-5 text-slate-300 group-hover:text-primary-500" />
-              </button>
+          <Table headers={['Bill No', 'Customer', 'Amount', 'Mode', 'Actions']}>
+            {invoices.slice(0, 10).map(inv => (
+              <TableRow key={inv.id}>
+                <TableCell className="font-black text-primary-600">{inv.invoiceNumber}</TableCell>
+                <TableCell className="font-bold uppercase text-[10px]">{inv.customerName}</TableCell>
+                <TableCell className="font-black">₹{inv.totalAmount.toFixed(0)}</TableCell>
+                <TableCell><span className="text-[9px] font-black uppercase bg-slate-100 px-2 py-0.5 rounded-lg">{inv.paymentMethod}</span></TableCell>
+                <TableCell>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-primary-600" onClick={() => loadBillForEditing(inv)}><Edit2 className="h-4 w-4" /></Button>
+                </TableCell>
+              </TableRow>
             ))}
-          </div>
+          </Table>
+          {invoices.length === 0 && <p className="text-center py-10 text-slate-400 italic">No previous bills found.</p>}
         </div>
       </Modal>
     </div>

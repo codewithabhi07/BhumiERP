@@ -75,6 +75,8 @@ export interface InvoiceItem {
   quantity: number;
   discount: number;
   total: number;
+  salesmanId?: string;
+  salesmanName?: string;
 }
 
 export interface Invoice {
@@ -90,8 +92,6 @@ export interface Invoice {
   rounding: number;
   totalAmount: number;
   paymentMethod: 'Cash' | 'Card' | 'UPI';
-  salesmanId?: string;
-  salesmanName?: string;
   date: string;
 }
 

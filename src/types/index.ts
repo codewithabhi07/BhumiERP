@@ -70,7 +70,6 @@ export interface SalaryPayment {
 export interface InvoiceItem {
   productId: string;
   name: string;
-  size: Size;
   color: string;
   price: number;
   quantity: number;
@@ -88,8 +87,11 @@ export interface Invoice {
   subTotal: number;
   tax: number;
   discount: number;
+  rounding: number;
   totalAmount: number;
   paymentMethod: 'Cash' | 'Card' | 'UPI';
+  salesmanId?: string;
+  salesmanName?: string;
   date: string;
 }
 

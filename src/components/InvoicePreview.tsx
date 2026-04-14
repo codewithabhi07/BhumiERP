@@ -63,7 +63,8 @@ export function InvoicePreview({ invoice, settings, onClose }: InvoicePreviewPro
                 {invoice.customerPhone && <p className="text-xs font-bold text-slate-600">Mob: +91 {invoice.customerPhone}</p>}
               </div>
               <div className="text-right">
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Payment</p>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Sales & Payment</p>
+                <p className="font-black text-slate-900 uppercase">Sales: {invoice.salesmanName || 'N/A'}</p>
                 <p className="font-black text-green-700 uppercase">{invoice.paymentMethod}</p>
               </div>
             </div>
@@ -73,7 +74,7 @@ export function InvoicePreview({ invoice, settings, onClose }: InvoicePreviewPro
               <table className="w-full text-xs text-left">
                 <thead>
                   <tr className="border-b-2 border-slate-900 text-slate-900">
-                    <th className="py-2 font-black uppercase tracking-widest">Item / Size / Color</th>
+                    <th className="py-2 font-black uppercase tracking-widest">Item Description</th>
                     <th className="py-2 text-center font-black uppercase tracking-widest">Qty</th>
                     <th className="py-2 text-right font-black uppercase tracking-widest">Rate</th>
                     <th className="py-2 text-right font-black uppercase tracking-widest">Amount</th>
@@ -84,7 +85,7 @@ export function InvoicePreview({ invoice, settings, onClose }: InvoicePreviewPro
                     <tr key={idx} className="text-slate-700">
                       <td className="py-3">
                         <p className="font-bold text-slate-900 uppercase">{item.name}</p>
-                        <p className="text-[10px] font-medium text-slate-500">{item.size} • {item.color}</p>
+                        {item.color && <p className="text-[10px] font-medium text-slate-500">{item.color}</p>}
                       </td>
                       <td className="py-3 text-center font-bold">{item.quantity}</td>
                       <td className="py-3 text-right font-bold">₹{item.price.toFixed(2)}</td>
@@ -102,14 +103,24 @@ export function InvoicePreview({ invoice, settings, onClose }: InvoicePreviewPro
                   <span className="text-slate-500 uppercase tracking-widest">Gross Amount</span>
                   <span className="text-slate-900">₹{invoice.subTotal.toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between text-xs font-bold">
-                  <span className="text-slate-500 uppercase tracking-widest">GST (12%)</span>
-                  <span className="text-slate-900">₹{invoice.tax.toFixed(2)}</span>
-                </div>
                 {invoice.discount > 0 && (
                   <div className="flex justify-between text-xs font-bold">
-                    <span className="text-slate-500 uppercase tracking-widest">Total Discount</span>
+                    <span className="text-slate-500 uppercase tracking-widest">Discount</span>
                     <span className="text-red-600">-₹{invoice.discount.toFixed(2)}</span>
+                  </div>
+                )}
+                {invoice.tax > 0 && (
+                  <div className="flex justify-between text-xs font-bold">
+                    <span className="text-slate-500 uppercase tracking-widest">GST (12%)</span>
+                    <span className="text-slate-900">₹{invoice.tax.toFixed(2)}</span>
+                  </div>
+                )}
+                {invoice.rounding !== 0 && (
+                  <div className="flex justify-between text-xs font-bold">
+                    <span className="text-slate-500 uppercase tracking-widest">Adjustment</span>
+                    <span className={invoice.rounding > 0 ? 'text-emerald-600' : 'text-rose-600'}>
+                      {invoice.rounding > 0 ? '+' : ''}₹{invoice.rounding.toFixed(2)}
+                    </span>
                   </div>
                 )}
                 <div className="h-0.5 bg-slate-900 my-2" />

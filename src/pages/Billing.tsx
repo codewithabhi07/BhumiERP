@@ -17,8 +17,7 @@ import {
   Circle,
   History,
   Edit2,
-  Save,
-  X
+  Save
 } from 'lucide-react';
 import type { Product, InvoiceItem, Invoice } from '../types';
 import { InvoicePreview } from '../components/InvoicePreview';
@@ -44,6 +43,8 @@ const SALESMEN: Record<string, string> = {
   '4': 'Dipak Mahajan'
 };
 
+const ITEM_SUGGESTIONS = Object.values(ITEM_SHORTCUTS);
+
 export default function BillingPage() {
   const { products, updateStock } = useProductStore();
   const { addInvoice, invoices, updateInvoice, settings } = useAppStore();
@@ -62,6 +63,7 @@ export default function BillingPage() {
 
   // Bill History & Editing
   const [showHistory, setShowHistory] = useState(false);
+  const [historySearch, setHistorySearch] = useState('');
   const [editingInvoiceId, setEditingInvoiceId] = useState<string | null>(null);
 
   // GST State
@@ -101,6 +103,11 @@ export default function BillingPage() {
     p.barcode.includes(searchTerm)
   ).slice(0, 5);
 
+  const filteredHistory = invoices.filter(inv => 
+    inv.invoiceNumber.toLowerCase().includes(historySearch.toLowerCase()) ||
+    (inv.customerName && inv.customerName.toLowerCase().includes(historySearch.toLowerCase()))
+  ).slice(0, 20);
+
   const addToCart = (product: Product) => {
     const existing = cart.find(item => item.productId === product.id);
     if (existing) {
@@ -116,11 +123,16 @@ export default function BillingPage() {
     searchInputRef.current?.focus();
   };
 
-  const handleManualNameChange = (val: string) => {
-    if (ITEM_SHORTCUTS[val]) {
-      setManualItem({ ...manualItem, name: ITEM_SHORTCUTS[val] });
-    } else {
-      setManualItem({ ...manualItem, name: val });
+  const handleManualNameShortcut = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      const val = (e.target as HTMLInputElement).value;
+      if (ITEM_SHORTCUTS[val]) {
+        e.preventDefault();
+        setManualItem({ ...manualItem, name: ITEM_SHORTCUTS[val] });
+        manualPriceRef.current?.focus();
+      } else {
+        handleKeyDown(e, manualPriceRef);
+      }
     }
   };
 
@@ -234,16 +246,16 @@ export default function BillingPage() {
           <h2 className="text-2xl font-black text-slate-900 uppercase italic tracking-tight">
             Billing <span className="text-primary-600">Terminal</span>
           </h2>
-          <Button variant="outline" className="gap-2 rounded-xl h-10 border-2" onClick={() => setShowHistory(true)}>
+          <Button variant="outline" className="gap-2 rounded-xl h-10 border-2 border-primary-200 text-primary-700 bg-primary-50 hover:bg-primary-100" onClick={() => setShowHistory(true)}>
             <History className="h-4 w-4" /> Previous Bills
           </Button>
         </div>
 
-        <Card title="Billing Panel" description="Scanner & Manual Entry System" className="shadow-2xl border-none">
+        <Card title="Billing Panel" description="Scanner & Manual Entry System" className="shadow-2xl border-none ring-1 ring-slate-100">
           <div className="flex flex-col gap-4">
             <div className="flex gap-2">
               <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-primary-400" />
                 <Input 
                   ref={searchInputRef}
                   placeholder="Scan barcode or search products..." 
@@ -256,11 +268,11 @@ export default function BillingPage() {
                       custNameRef.current?.focus();
                     }
                   }}
-                  className="pl-10 h-12 rounded-2xl bg-slate-50 border-slate-100"
+                  className="pl-10 h-12 rounded-2xl bg-slate-50 border-slate-100 focus:bg-white focus:border-primary-300"
                   disabled={isManualEntry}
                 />
                 {searchTerm && filteredProducts.length > 0 && (
-                  <div className="absolute top-full z-10 mt-2 w-full rounded-2xl border border-slate-200 bg-white shadow-2xl">
+                  <div className="absolute top-full z-10 mt-2 w-full rounded-2xl border border-slate-200 bg-white shadow-2xl overflow-hidden">
                     {filteredProducts.map(p => (
                       <button
                         key={p.id} onClick={() => addToCart(p)}
@@ -279,22 +291,34 @@ export default function BillingPage() {
                   </div>
                 )}
               </div>
-              <Button variant={isManualEntry ? 'primary' : 'outline'} className="gap-2 shrink-0 h-12 rounded-2xl border-2" onClick={() => setIsManualEntry(!isManualEntry)}>
+              <Button variant={isManualEntry ? 'primary' : 'outline'} className={cn("gap-2 shrink-0 h-12 rounded-2xl border-2 transition-all", isManualEntry ? "bg-primary-600 border-primary-600" : "border-primary-200 text-primary-600")} onClick={() => setIsManualEntry(!isManualEntry)}>
                 <Keyboard className="h-5 w-5" /> Manual Entry (F2)
               </Button>
             </div>
 
             {isManualEntry && (
-              <div className="bg-gradient-to-br from-slate-50 to-white p-5 rounded-[2rem] border border-slate-200 animate-in fade-in slide-in-from-top-2 duration-200 shadow-inner">
+              <div className="bg-gradient-to-br from-primary-50 to-white p-5 rounded-[2rem] border-2 border-primary-100 animate-in fade-in slide-in-from-top-2 duration-200 shadow-inner">
                 <div className="grid grid-cols-12 gap-3">
                   <div className="col-span-12 md:col-span-4 relative">
                     <Input 
-                      ref={manualNameRef} label="Item Name (1-42)" 
+                      ref={manualNameRef} label="Item Name (1-42 + Enter)" 
                       placeholder="Type number e.g. 1" 
                       value={manualItem.name}
-                      onChange={e => handleManualNameChange(e.target.value)}
-                      onKeyDown={(e) => handleKeyDown(e, manualPriceRef)}
+                      onChange={e => setManualItem({...manualItem, name: e.target.value})}
+                      onKeyDown={handleManualNameShortcut}
                     />
+                    {manualItem.name && !ITEM_SHORTCUTS[manualItem.name] && ITEM_SUGGESTIONS.some(s => s.toLowerCase().includes(manualItem.name.toLowerCase())) && (
+                      <div className="absolute top-full z-10 mt-1 w-full bg-white border border-slate-200 rounded-xl shadow-lg py-1 max-h-40 overflow-y-auto">
+                        {ITEM_SUGGESTIONS.filter(s => s.toLowerCase().includes(manualItem.name.toLowerCase())).map(s => (
+                          <button 
+                            key={s} className="w-full text-left px-3 py-2 text-sm font-bold hover:bg-primary-50 hover:text-primary-600"
+                            onClick={() => { setManualItem({...manualItem, name: s}); manualPriceRef.current?.focus(); }}
+                          >
+                            {s}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
                   <div className="col-span-4 md:col-span-2">
                     <Input 
@@ -321,7 +345,7 @@ export default function BillingPage() {
                     />
                   </div>
                   <div className="col-span-12 md:col-span-2 flex items-end">
-                    <Button className="w-full h-10 rounded-xl font-black uppercase text-xs shadow-lg shadow-primary-100" onClick={addManualToCart} disabled={!manualItem.name || manualItem.price <= 0}>Add</Button>
+                    <Button className="w-full h-10 rounded-xl font-black uppercase text-xs shadow-lg bg-primary-600" onClick={addManualToCart} disabled={!manualItem.name || manualItem.price <= 0}>Add</Button>
                   </div>
                 </div>
               </div>
@@ -329,10 +353,10 @@ export default function BillingPage() {
           </div>
         </Card>
 
-        <Card title="Current Cart" className="overflow-hidden shadow-2xl border-none">
+        <Card title="Current Cart" className="overflow-hidden shadow-2xl border-none ring-1 ring-slate-100">
           <Table headers={['Item Description', 'Price (₹)', 'Qty', 'S.Man', 'Total', '']}>
             {cart.map(item => (
-              <TableRow key={item.productId} className="group">
+              <TableRow key={item.productId} className="group hover:bg-primary-50/30">
                 <TableCell>
                   <input 
                     type="text" value={item.name}
@@ -362,14 +386,14 @@ export default function BillingPage() {
                   />
                 </TableCell>
                 <TableCell className="font-black text-slate-900">₹{item.total.toFixed(0)}</TableCell>
-                <TableCell><Button variant="ghost" size="icon" className="h-8 w-8 text-rose-400 hover:bg-rose-50" onClick={() => removeFromCart(item.productId)}><Trash2 className="h-4 w-4" /></Button></TableCell>
+                <TableCell><Button variant="ghost" size="icon" className="h-8 w-8 text-rose-400 hover:bg-rose-50 hover:text-rose-600" onClick={() => removeFromCart(item.productId)}><Trash2 className="h-4 w-4" /></Button></TableCell>
               </TableRow>
             ))}
             {cart.length === 0 && (
               <TableRow>
                 <TableCell colSpan={6} className="py-20 text-center opacity-30">
-                  <ShoppingCart className="h-12 w-12 mx-auto mb-2" />
-                  <p className="font-black uppercase tracking-widest text-[10px]">Cart is empty</p>
+                  <ShoppingCart className="h-12 w-12 mx-auto mb-2 text-primary-300" />
+                  <p className="font-black uppercase tracking-widest text-[10px] text-slate-400">Cart is empty</p>
                 </TableCell>
               </TableRow>
             )}
@@ -378,47 +402,47 @@ export default function BillingPage() {
       </div>
 
       <div className="col-span-12 lg:col-span-4 space-y-6">
-        <Card title="Customer Details">
+        <Card title="Customer Details" className="shadow-xl border-none">
           <div className="space-y-4">
-            <Input ref={custNameRef} label="Customer Name" value={customerName} onChange={e => setCustomerName(e.target.value)} onKeyDown={(e) => handleKeyDown(e, custPhoneRef)} />
-            <Input ref={custPhoneRef} label="Mobile Number" value={customerPhone} onChange={e => setCustomerPhone(e.target.value)} onKeyDown={(e) => handleKeyDown(e, discountRef)} />
+            <Input ref={custNameRef} label="Customer Name" value={customerName} onChange={e => setCustomerName(e.target.value)} onKeyDown={(e) => handleKeyDown(e, custPhoneRef)} className="bg-slate-50 border-none" />
+            <Input ref={custPhoneRef} label="Mobile Number" value={customerPhone} onChange={e => setCustomerPhone(e.target.value)} onKeyDown={(e) => handleKeyDown(e, discountRef)} className="bg-slate-50 border-none" />
           </div>
         </Card>
 
-        <Card title="Order Summary" className="bg-slate-900 text-white border-none shadow-2xl overflow-hidden relative">
+        <Card title="Order Summary" className="bg-gradient-to-br from-indigo-600 to-primary-700 text-white border-none shadow-2xl overflow-hidden relative">
           <div className="absolute top-0 right-0 p-8 opacity-5">
             <Receipt className="h-32 w-32" />
           </div>
           <div className="space-y-4 relative z-10">
-            <div className="flex justify-between p-4 rounded-2xl bg-white/5 border border-white/5">
-              <span className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em]">Gross Total</span>
+            <div className="flex justify-between p-4 rounded-2xl bg-white/10 border border-white/10 backdrop-blur-sm">
+              <span className="text-[10px] font-black uppercase text-white/60 tracking-[0.2em]">Gross Total</span>
               <span className="text-xl font-black text-white">₹{subTotal.toFixed(2)}</span>
             </div>
 
             <div className="space-y-3 pt-2 pb-2">
               <div className="flex items-center justify-between px-1">
-                <span className="text-xs font-bold uppercase text-slate-400">Discount (%)</span>
+                <span className="text-xs font-bold uppercase text-white/70">Discount (%)</span>
                 <div className="flex items-center gap-2">
                   <input 
                     ref={discountRef}
                     type="number" value={discountPercent || ''}
                     onChange={e => setDiscountPercent(Number(e.target.value))}
                     onKeyDown={(e) => handleKeyDown(e, roundingRef)}
-                    className="w-16 text-right font-black text-rose-400 focus:outline-none bg-white/5 border border-white/10 rounded-xl px-2 py-1.5 text-sm"
+                    className="w-16 text-right font-black text-white focus:outline-none bg-white/10 border border-white/20 rounded-xl px-2 py-1.5 text-sm"
                   />
-                  <span className="text-xs font-black text-rose-400">%</span>
+                  <span className="text-xs font-black text-rose-300">%</span>
                 </div>
               </div>
               
               <div className="flex items-center justify-between px-1">
-                <span className="text-xs font-bold uppercase text-slate-400">Rounding</span>
+                <span className="text-xs font-bold uppercase text-white/70">Rounding</span>
                 <div className="flex items-center gap-2">
                   <input 
                     ref={roundingRef}
                     type="number" value={rounding || ''}
                     onChange={e => setRounding(Number(e.target.value))}
                     onKeyDown={(e) => handleKeyDown(e, generateBillBtnRef)}
-                    className="w-20 text-right font-black text-emerald-400 focus:outline-none bg-white/5 border border-white/10 rounded-xl px-2 py-1.5 text-sm"
+                    className="w-20 text-right font-black text-emerald-300 focus:outline-none bg-white/10 border border-white/20 rounded-xl px-2 py-1.5 text-sm"
                     placeholder="+/- amt"
                   />
                 </div>
@@ -426,34 +450,37 @@ export default function BillingPage() {
             </div>
 
             <div className="flex items-center justify-between cursor-pointer group px-1" onClick={() => setIsGstEnabled(!isGstEnabled)}>
-              <span className="text-xs font-bold uppercase text-slate-400 group-hover:text-primary-400 transition-colors">Apply GST (12%)</span>
-              {isGstEnabled ? <CheckCircle2 className="h-5 w-5 text-primary-500" /> : <Circle className="h-5 w-5 text-white/20" />}
+              <span className="text-xs font-bold uppercase text-white/70 group-hover:text-white transition-colors">Apply GST (12%)</span>
+              {isGstEnabled ? <CheckCircle2 className="h-5 w-5 text-emerald-400 shadow-sm" /> : <Circle className="h-5 w-5 text-white/20" />}
             </div>
 
             <div className="my-2 h-px bg-white/10" />
             <div className="flex justify-between items-end px-1">
               <div>
-                <p className="text-[10px] font-black uppercase text-slate-500 tracking-[0.2em] mb-1">Settlement</p>
-                <p className="text-5xl font-black italic tracking-tighter text-primary-400 leading-none">₹{totalAmount.toFixed(0)}</p>
+                <p className="text-[10px] font-black uppercase text-white/50 tracking-[0.2em] mb-1">Settlement</p>
+                <p className="text-5xl font-black italic tracking-tighter text-white leading-none drop-shadow-lg">₹{totalAmount.toFixed(0)}</p>
               </div>
               <div className="text-right">
-                <div className="flex gap-1">
-                  {['Cash', 'Card', 'UPI'].map(m => (
-                    <button key={m} onClick={() => setPaymentMethod(m as any)} className={cn("px-2.5 py-1.5 rounded-lg text-[9px] font-black uppercase border transition-all", paymentMethod === m ? "bg-primary-600 border-primary-600 text-white shadow-lg shadow-primary-600/20" : "border-white/10 text-slate-500 hover:text-white hover:bg-white/5")}>
-                      {m}
-                    </button>
-                  ))}
+                <div className="flex flex-col gap-1.5 items-end">
+                  <p className="text-[10px] font-bold text-white/50 uppercase italic tracking-widest">Pay Mode</p>
+                  <div className="flex gap-1">
+                    {['Cash', 'Card', 'UPI'].map(m => (
+                      <button key={m} onClick={() => setPaymentMethod(m as any)} className={cn("px-2.5 py-1.5 rounded-lg text-[9px] font-black uppercase border transition-all", paymentMethod === m ? "bg-white text-primary-700 border-white shadow-xl" : "border-white/10 text-white/60 hover:text-white hover:bg-white/5")}>
+                        {m}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
 
-            <Button ref={generateBillBtnRef} className={cn("w-full h-16 text-xl mt-4 gap-3 rounded-[1.5rem] font-black uppercase tracking-tighter shadow-2xl transition-all", editingInvoiceId ? "bg-emerald-600 hover:bg-emerald-700" : "bg-primary-600 hover:bg-primary-700 hover:scale-[1.02]")} disabled={cart.length === 0} onClick={handleCheckout}>
+            <Button ref={generateBillBtnRef} className={cn("w-full h-16 text-xl mt-4 gap-3 rounded-[1.5rem] font-black uppercase tracking-tighter shadow-2xl transition-all border-2 border-white/20", editingInvoiceId ? "bg-emerald-500 hover:bg-emerald-600" : "bg-white text-primary-700 hover:bg-primary-50 hover:scale-[1.02]")} disabled={cart.length === 0} onClick={handleCheckout}>
               {editingInvoiceId ? <Save className="h-7 w-7" /> : <Receipt className="h-7 w-7" />}
               {editingInvoiceId ? 'Update Bill' : 'Generate Bill'}
             </Button>
             {editingInvoiceId && (
-              <Button variant="ghost" className="w-full text-slate-500 uppercase font-black text-xs h-10" onClick={() => { setEditingInvoiceId(null); setCart([]); setCustomerName(''); setCustomerPhone(''); }}>
-                Cancel Edit
+              <Button variant="ghost" className="w-full text-white/60 hover:text-white uppercase font-black text-[10px] h-10 tracking-widest" onClick={() => { setEditingInvoiceId(null); setCart([]); setCustomerName(''); setCustomerPhone(''); }}>
+                Cancel Correction
               </Button>
             )}
           </div>
@@ -461,22 +488,36 @@ export default function BillingPage() {
       </div>
 
       {/* Bill History Modal */}
-      <Modal isOpen={showHistory} onClose={() => setShowHistory(false)} title="Previous Bills" size="lg">
+      <Modal isOpen={showHistory} onClose={() => setShowHistory(false)} title="Quick Bill Search" size="lg">
         <div className="space-y-4">
-          <Table headers={['Bill No', 'Customer', 'Amount', 'Mode', 'Actions']}>
-            {invoices.slice(0, 10).map(inv => (
-              <TableRow key={inv.id}>
-                <TableCell className="font-black text-primary-600">{inv.invoiceNumber}</TableCell>
-                <TableCell className="font-bold uppercase text-[10px]">{inv.customerName}</TableCell>
-                <TableCell className="font-black">₹{inv.totalAmount.toFixed(0)}</TableCell>
-                <TableCell><span className="text-[9px] font-black uppercase bg-slate-100 px-2 py-0.5 rounded-lg">{inv.paymentMethod}</span></TableCell>
-                <TableCell>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-primary-600" onClick={() => loadBillForEditing(inv)}><Edit2 className="h-4 w-4" /></Button>
-                </TableCell>
-              </TableRow>
-            ))}
-          </Table>
-          {invoices.length === 0 && <p className="text-center py-10 text-slate-400 italic">No previous bills found.</p>}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-primary-400" />
+            <Input 
+              placeholder="Search by Bill No or Customer..." 
+              value={historySearch} 
+              onChange={e => setHistorySearch(e.target.value)} 
+              className="pl-10 rounded-xl bg-slate-50 border-slate-100 h-11"
+            />
+          </div>
+          <div className="max-h-[400px] overflow-y-auto rounded-xl border border-slate-100">
+            <Table headers={['Bill No', 'Customer', 'Amount', 'Actions']}>
+              {filteredHistory.map(inv => (
+                <TableRow key={inv.id} className="hover:bg-primary-50/30">
+                  <TableCell className="font-black text-primary-600">{inv.invoiceNumber}</TableCell>
+                  <TableCell className="font-bold uppercase text-[10px] text-slate-700">{inv.customerName}</TableCell>
+                  <TableCell className="font-black text-slate-900">₹{inv.totalAmount.toFixed(0)}</TableCell>
+                  <TableCell>
+                    <div className="flex gap-2">
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-primary-600 bg-primary-50 rounded-lg" onClick={() => loadBillForEditing(inv)} title="Edit this bill">
+                        <Edit2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </Table>
+            {filteredHistory.length === 0 && <p className="text-center py-16 text-slate-400 font-bold uppercase tracking-widest text-xs italic">No matching bills found.</p>}
+          </div>
         </div>
       </Modal>
     </div>

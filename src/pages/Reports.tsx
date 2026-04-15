@@ -245,10 +245,10 @@ export default function ReportsPage() {
           <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Card</p>
           <h3 className="text-2xl font-black text-blue-700 mt-1">₹{cardTotal.toLocaleString()}</h3>
         </div>
-        <div className="rounded-3xl bg-gradient-to-br from-primary-600 to-indigo-700 p-6 shadow-xl border-none relative group overflow-hidden">
-          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform"><TrendingUp className="h-16 w-16 text-white" /></div>
-          <p className="text-[10px] font-black text-white/60 uppercase tracking-widest">Grand Total</p>
-          <h3 className="text-2xl font-black text-white mt-1">₹{totalRevenue.toLocaleString()}</h3>
+        <div className="rounded-3xl bg-gradient-to-br from-primary-600 to-indigo-700 p-6 shadow-xl border-none relative group overflow-hidden text-white">
+          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform"><TrendingUp className="h-16 w-16" /></div>
+          <p className="text-[10px] font-black uppercase tracking-widest text-white/60">Grand Total</p>
+          <h3 className="text-2xl font-black mt-1">₹{totalRevenue.toLocaleString()}</h3>
         </div>
       </div>
 
@@ -332,7 +332,7 @@ export default function ReportsPage() {
               <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Settlement Amount</p>
               <p className="text-4xl font-black text-primary-400 tracking-tighter italic">₹{editFormData.totalAmount.toFixed(0)}</p>
             </div>
-            <Button className="w-full uppercase font-black tracking-widest text-xs h-14 rounded-2xl gap-2 shadow-lg" onClick={handleSaveEdit}><Save className="h-5 w-5" /> Save Corrections</Button>
+            <Button className="w-full uppercase font-black tracking-widest text-xs h-14 rounded-2xl gap-2 shadow-lg bg-primary-600" onClick={handleSaveEdit}><Save className="h-5 w-5" /> Save Corrections</Button>
           </div>
         )}
       </Modal>

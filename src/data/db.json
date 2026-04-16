@@ -1,0 +1,247 @@
+{
+  "products": [
+    {
+      "id": "1",
+      "name": "Slim Fit Cotton Shirt",
+      "brand": "Denim Co",
+      "category": "Shirts",
+      "size": "M",
+      "color": "Navy Blue",
+      "season": "Summer 2026",
+      "barcode": "8901234567890",
+      "purchasePrice": 800,
+      "sellingPrice": 1499,
+      "quantity": 25,
+      "minQuantity": 5,
+      "createdAt": "2026-03-10T10:00:00Z"
+    },
+    {
+      "id": "2",
+      "name": "Regular Fit Chinos",
+      "brand": "Urban Wear",
+      "category": "Pants",
+      "size": "L",
+      "color": "Khaki",
+      "season": "Spring 2026",
+      "barcode": "8901234567891",
+      "purchasePrice": 1200,
+      "sellingPrice": 2299,
+      "quantity": 12,
+      "minQuantity": 5,
+      "createdAt": "2026-03-12T11:00:00Z"
+    }
+  ],
+  "customers": [
+    {
+      "id": "c1",
+      "name": "Rahul Sharma",
+      "phone": "9876543210",
+      "email": "rahul@example.com",
+      "address": "Andheri East, Mumbai",
+      "totalSpent": 12500,
+      "lastVisit": "2026-04-05T12:00:00Z"
+    }
+  ],
+  "employees": [
+    {
+      "id": "e1",
+      "name": "Amit Kumar",
+      "position": "Sales Executive",
+      "phone": "9123456789",
+      "salary": 25000,
+      "joinDate": "2025-01-15",
+      "status": "Active"
+    }
+  ],
+  "attendance": [
+    {
+      "id": "e1-2026-04-16",
+      "employeeId": "e1",
+      "date": "2026-04-16",
+      "status": "Full Day"
+    }
+  ],
+  "leaveRequests": [],
+  "salaryPayments": [],
+  "invoices": [
+    {
+      "id": "1776332271478",
+      "invoiceNumber": "INV-9342",
+      "customerName": "Cash Customer",
+      "customerPhone": "",
+      "items": [
+        {
+          "productId": "manual-1776332248963",
+          "name": "Knicker",
+          "color": "Mix",
+          "price": 95,
+          "quantity": 2,
+          "discount": 0,
+          "total": 190,
+          "salesmanId": "4",
+          "salesmanName": "Dipak Mahajan"
+        }
+      ],
+      "subTotal": 190,
+      "tax": 0,
+      "discount": 0,
+      "rounding": 0,
+      "totalAmount": 190,
+      "paymentMethod": "Cash",
+      "date": "2026-04-16T09:37:51.478Z"
+    },
+    {
+      "id": "1776332465172",
+      "invoiceNumber": "INV-3453",
+      "customerName": "lalitt mali",
+      "customerPhone": "7778878585858",
+      "items": [
+        {
+          "productId": "manual-1776332437548",
+          "name": "Palazzo Jeans",
+          "color": "Mix",
+          "price": 250,
+          "quantity": 11,
+          "discount": 0,
+          "total": 2750,
+          "salesmanId": "4",
+          "salesmanName": "Dipak Mahajan"
+        },
+        {
+          "productId": "manual-1776332797818",
+          "name": "Sherwani",
+          "color": "Mix",
+          "price": 600,
+          "quantity": 14,
+          "discount": 0,
+          "total": 8400,
+          "salesmanId": "4",
+          "salesmanName": "Dipak Mahajan"
+        }
+      ],
+      "subTotal": 11150,
+      "tax": 0,
+      "discount": 0,
+      "rounding": 0,
+      "totalAmount": 11150,
+      "paymentMethod": "UPI",
+      "date": "2026-04-16T09:46:40.768Z"
+    },
+    {
+      "id": "1776335030373",
+      "invoiceNumber": "INV-8330",
+      "customerName": "Ganesh mali",
+      "customerPhone": "7775025688",
+      "items": [
+        {
+          "productId": "manual-1776334983486",
+          "name": "Palazzo Jeans",
+          "color": "Mix",
+          "price": 250,
+          "quantity": 15,
+          "discount": 0,
+          "total": 3750,
+          "salesmanId": "4",
+          "salesmanName": "Dipak Mahajan"
+        }
+      ],
+      "subTotal": 3750,
+      "tax": 0,
+      "discount": 375,
+      "rounding": -75,
+      "totalAmount": 3300,
+      "paymentMethod": "Cash",
+      "date": "2026-04-16T10:23:50.373Z"
+    },
+    {
+      "id": "1776335472783",
+      "invoiceNumber": "INV-9343",
+      "customerName": "lalya",
+      "customerPhone": "52525252",
+      "items": [
+        {
+          "productId": "manual-1776335456128",
+          "name": "Shirt",
+          "color": "Mix",
+          "price": 250,
+          "quantity": 1,
+          "discount": 0,
+          "total": 250,
+          "salesmanId": "1",
+          "salesmanName": "Sunil Patil"
+        }
+      ],
+      "subTotal": 250,
+      "tax": 0,
+      "discount": 0,
+      "rounding": 0,
+      "totalAmount": 250,
+      "paymentMethod": "UPI",
+      "date": "2026-04-16T10:31:12.783Z"
+    },
+    {
+      "id": "1776335518109",
+      "invoiceNumber": "INV-9344",
+      "customerName": "lalya",
+      "customerPhone": "55008855",
+      "items": [
+        {
+          "productId": "manual-1776335505625",
+          "name": "Pant",
+          "color": "Mix",
+          "price": 250,
+          "quantity": 1,
+          "discount": 0,
+          "total": 250,
+          "salesmanId": "1",
+          "salesmanName": "Sunil Patil"
+        }
+      ],
+      "subTotal": 250,
+      "tax": 0,
+      "discount": 0,
+      "rounding": 0,
+      "totalAmount": 250,
+      "paymentMethod": "Cash",
+      "date": "2026-04-16T10:31:58.109Z"
+    },
+    {
+      "id": "1776337232716",
+      "invoiceNumber": "INV-9345",
+      "customerName": "lli",
+      "customerPhone": "7775025688",
+      "items": [
+        {
+          "productId": "manual-1776337211627",
+          "name": "Siyaram Shirt",
+          "color": "Mix",
+          "price": 555,
+          "quantity": 1,
+          "discount": 0,
+          "total": 555,
+          "salesmanId": "02",
+          "salesmanName": "N/A"
+        }
+      ],
+      "subTotal": 555,
+      "tax": 0,
+      "discount": 0,
+      "rounding": 0,
+      "totalAmount": 555,
+      "paymentMethod": "UPI",
+      "date": "2026-04-16T11:00:32.716Z"
+    }
+  ],
+  "settings": {
+    "shopName": "BHUMIKA GARMENTS",
+    "ownerName": "Ganesh Mahajan",
+    "address": "Minatai Thakare Complex, Parola, Maharashtra (27)",
+    "phone": "9975345692",
+    "gstNumber": "27ASAPM9464A1ZS",
+    "themeColor": "#7c3aed",
+    "currency": "INR",
+    "pin": "1234",
+    "lowStockThreshold": 5,
+    "invoiceType": "A4"
+  }
+}

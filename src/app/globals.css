@@ -1,0 +1,73 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    @apply bg-slate-50 text-slate-900 antialiased overflow-hidden;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+}
+
+@theme {
+  --color-primary-50: #f5f3ff;
+  --color-primary-100: #ede9fe;
+  --color-primary-200: #ddd6fe;
+  --color-primary-300: #c4b5fd;
+  --color-primary-400: #a78bfa;
+  --color-primary-500: #8b5cf6;
+  --color-primary-600: #7c3aed;
+  --color-primary-700: #6d28d9;
+  --color-primary-800: #5b21b6;
+  --color-primary-900: #4c1d95;
+  --color-primary-950: #2e1065;
+
+  /* Vibrant ERP Palette */
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-danger: #ef4444;
+  --color-info: #0ea5e9;
+  
+  /* Accent Gradients */
+  --color-vibrant-purple: #8b5cf6;
+  --color-vibrant-blue: #3b82f6;
+  --color-vibrant-pink: #ec4899;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-slate-200 rounded-full;
+}
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-primary-300;
+}
+
+/* UI Transitions */
+* {
+  @apply transition-all duration-200;
+}
+
+/* Card Hover Effects */
+.hover-card {
+  @apply hover:shadow-2xl hover:shadow-primary-100/50 hover:-translate-y-1;
+}
+
+/* Input Focus Glow */
+input:focus, select:focus {
+  @apply ring-4 ring-primary-500/10 border-primary-500;
+}
+
+/* Animations */
+@keyframes slideUp {
+  from { transform: translateY(10px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.animate-slide-up {
+  animation: slideUp 0.4s ease-out forwards;
+}

@@ -95,6 +95,13 @@ export interface Invoice {
   date: string;
 }
 
+export interface Salesman {
+  id: string; // This will be the Salesman Number (e.g. 1, 2, 3)
+  name: string;
+  phone?: string;
+  commissionRate: number; // e.g. 1 for 1%
+}
+
 export interface ShopSettings {
   shopName: string;
   ownerName: string;
@@ -104,4 +111,7 @@ export interface ShopSettings {
   logo?: string;
   themeColor: string;
   currency: string;
+  pin?: string;
+  lowStockThreshold?: number;
+  invoiceType?: 'A4' | 'Thermal' | 'A4 Half';
 }

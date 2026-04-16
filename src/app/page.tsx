@@ -1,6 +1,11 @@
+'use client';
+
+import { useState, useEffect } from 'react';
 import { useProductStore } from '../store/useProductStore';
 import { useAppStore } from '../store/useAppStore';
 import { Card } from '../components/ui/Card';
+import { Button } from '../components/ui/Button';
+import { SecurityWrapper } from '../components/layout/SecurityWrapper';
 import { cn } from '../utils/cn';
 import { 
   Users, 
@@ -9,7 +14,8 @@ import {
   Wallet,
   QrCode,
   TrendingUp,
-  ShoppingCart
+  ShoppingCart,
+  MessageSquare
 } from 'lucide-react';
 import { 
   XAxis, 
@@ -31,28 +37,91 @@ const data = [
   { name: 'Sun', sales: 3490 },
 ];
 
+function formatDistanceToNow(date: Date) {
+  const diff = Math.floor((new Date().getTime() - date.getTime()) / 1000);
+  if (diff < 60) return `${diff}s`;
+  if (diff < 3600) return `${Math.floor(diff / 60)}m`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h`;
+  return `${Math.floor(diff / 86400)}d`;
+}
+
 export default function DashboardPage() {
   const { products } = useProductStore();
-  const { customers, invoices, settings } = useAppStore();
+  const { customers, invoices, settings, salesmen } = useAppStore();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const todayInvoices = invoices.filter(inv => {
+    const invDate = new Date(inv.date);
+    invDate.setHours(0, 0, 0, 0);
+    return invDate.getTime() === today.getTime();
+  });
 
   const lowStockCount = products.filter(p => p.quantity <= (settings?.lowStockThreshold || 5)).length;
-  const totalSales = invoices.reduce((acc, inv) => acc + inv.totalAmount, 0);
+  const totalSalesToday = todayInvoices.reduce((acc, inv) => acc + inv.totalAmount, 0);
   
-  const cashSales = invoices.filter(i => i.paymentMethod === 'Cash').reduce((acc, inv) => acc + inv.totalAmount, 0);
-  const upiSales = invoices.filter(i => i.paymentMethod === 'UPI').reduce((acc, inv) => acc + inv.totalAmount, 0);
+  const cashSalesToday = todayInvoices.filter(i => i.paymentMethod === 'Cash').reduce((acc, inv) => acc + inv.totalAmount, 0);
+  const upiSalesToday = todayInvoices.filter(i => i.paymentMethod === 'UPI').reduce((acc, inv) => acc + inv.totalAmount, 0);
+  const cardSalesToday = todayInvoices.filter(i => i.paymentMethod === 'Card').reduce((acc, inv) => acc + inv.totalAmount, 0);
+
+  const sendDailyReportToBapu = () => {
+    const dateStr = new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
+    const BAPU_NUMBER = '9890001054';
+    
+    let reportMsg = `*Daily Sales Report - Bhumika Garments*\n`;
+    reportMsg += `*Date:* ${dateStr}\n`;
+    reportMsg += `----------------------------\n`;
+    reportMsg += `💰 *Cash Collection:* ₹${cashSalesToday.toLocaleString()}\n`;
+    reportMsg += `📱 *UPI / PhonePe:* ₹${upiSalesToday.toLocaleString()}\n`;
+    reportMsg += `💳 *Card Payments:* ₹${cardSalesToday.toLocaleString()}\n`;
+    reportMsg += `----------------------------\n`;
+    reportMsg += `🚀 *TOTAL REVENUE:* ₹${totalSalesToday.toLocaleString()}\n`;
+    reportMsg += `----------------------------\n`;
+    reportMsg += `📦 *Current Total Stock:* ${products.reduce((acc, p) => acc + p.quantity, 0)} Pcs\n`;
+    reportMsg += `👤 *New Customers Today:* ${todayInvoices.filter(inv => inv.customerName !== 'Cash Customer').length}\n`;
+    reportMsg += `\n_Generated automatically by BhumiERP_`;
+
+    window.open(`https://wa.me/91${BAPU_NUMBER}?text=${encodeURIComponent(reportMsg)}`, '_blank');
+  };
+
+  // Aggregate sales by day for the last 7 days
+  const last7Days = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }).reverse();
+
+  const chartData = last7Days.map(date => {
+    const dayInvoices = invoices.filter(inv => {
+      const invDate = new Date(inv.date);
+      invDate.setHours(0, 0, 0, 0);
+      return invDate.getTime() === date.getTime();
+    });
+    return {
+      name: date.toLocaleDateString('en-IN', { weekday: 'short' }),
+      sales: dayInvoices.reduce((acc, inv) => acc + inv.totalAmount, 0)
+    };
+  });
 
   const stats = [
     { 
-      label: 'Cash Collection', 
-      value: `₹${cashSales.toLocaleString()}`, 
+      label: "Today's Cash", 
+      value: `₹${cashSalesToday.toLocaleString()}`, 
       icon: Wallet, 
       gradient: 'from-emerald-400 to-teal-600',
       trend: 'In-Drawer',
       color: 'text-emerald-600'
     },
     { 
-      label: 'UPI / Online', 
-      value: `₹${upiSales.toLocaleString()}`, 
+      label: "Today's UPI", 
+      value: `₹${upiSalesToday.toLocaleString()}`, 
       icon: QrCode, 
       gradient: 'from-blue-400 to-indigo-600',
       trend: 'Bank Transfer',
@@ -77,7 +146,8 @@ export default function DashboardPage() {
   ];
 
   return (
-    <div className="space-y-8 animate-slide-up">
+    <SecurityWrapper>
+      <div className="space-y-8 animate-slide-up">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-black text-slate-900 tracking-tight italic uppercase">
@@ -87,10 +157,19 @@ export default function DashboardPage() {
             {new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })}
           </p>
         </div>
-        <div className="flex items-center gap-2 bg-white p-2 rounded-2xl shadow-xl shadow-slate-200/50 border border-slate-100">
-          <div className="px-4 py-2 bg-emerald-50 rounded-xl border border-emerald-100 flex items-center gap-2">
-            <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">System Online</span>
+        <div className="flex items-center gap-3">
+          <Button 
+            variant="outline" 
+            className="gap-2 h-12 px-6 rounded-2xl font-black uppercase text-[10px] border-2 border-emerald-500 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 shadow-lg shadow-emerald-100/50 transition-all active:scale-95"
+            onClick={sendDailyReportToBapu}
+          >
+            <MessageSquare className="h-4 w-4" /> Send Daily Report to Bapu Shet
+          </Button>
+          <div className="flex items-center gap-2 bg-white p-2 rounded-2xl shadow-xl shadow-slate-200/50 border border-slate-100">
+            <div className="px-4 py-2 bg-emerald-50 rounded-xl border border-emerald-100 flex items-center gap-2">
+              <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">System Online</span>
+            </div>
           </div>
         </div>
       </div>
@@ -98,7 +177,7 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat) => (
           <div key={stat.label} className="group relative overflow-hidden rounded-[2.5rem] bg-white p-6 shadow-xl shadow-slate-200/40 hover:shadow-2xl hover:shadow-primary-100/50 transition-all duration-300 transform hover:-translate-y-1 border border-slate-50">
-            <div className={cn("absolute -right-4 -top-4 h-24 w-24 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity bg-gradient-to-br rounded-full", stat.gradient)} />
+            <div className={cn("absolute -right-4 -top-4 h-24 w-24 opacity-[0.08] group-hover:opacity-[0.15] transition-opacity bg-gradient-to-br rounded-full", stat.gradient)} />
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className={cn("rounded-2xl p-3 text-white shadow-lg", stat.gradient)}>
@@ -120,35 +199,37 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-2 shadow-2xl shadow-slate-200/50 border-none rounded-[2.5rem]" title="Revenue Intelligence" description="Performance analytics for the current week.">
           <div className="h-[350px] w-full pt-6">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={invoices.length > 0 ? invoices.slice(-10).reverse().map((inv, idx) => ({ name: `B-${idx+1}`, sales: inv.totalAmount })) : data}>
-                <defs>
-                  <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#7c3aed" stopOpacity={0.2}/>
-                    <stop offset="95%" stopColor="#7c3aed" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 10, fontWeight: 'bold'}} />
-                <YAxis axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 10, fontWeight: 'bold'}} />
-                <Tooltip 
-                  contentStyle={{ borderRadius: '20px', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)', fontWeight: 'bold' }}
-                />
-                <Area type="monotone" dataKey="sales" stroke="#7c3aed" strokeWidth={4} fillOpacity={1} fill="url(#colorSales)" />
-              </AreaChart>
-            </ResponsiveContainer>
+            {mounted && (
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={chartData}>
+                  <defs>
+                    <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#7c3aed" stopOpacity={0.2}/>
+                      <stop offset="95%" stopColor="#7c3aed" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 10, fontWeight: 'bold'}} />
+                  <YAxis axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 10, fontWeight: 'bold'}} />
+                  <Tooltip 
+                    contentStyle={{ borderRadius: '20px', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)', fontWeight: 'bold' }}
+                  />
+                  <Area type="monotone" dataKey="sales" stroke="#7c3aed" strokeWidth={4} fillOpacity={1} fill="url(#colorSales)" />
+                </AreaChart>
+              </ResponsiveContainer>
+            )}
           </div>
         </Card>
 
         <div className="space-y-6">
           <Card className="bg-gradient-to-br from-slate-900 to-slate-800 text-white border-none shadow-2xl rounded-[2.5rem] overflow-hidden relative">
-            <div className="absolute top-0 right-0 p-8 opacity-10 rotate-12">
+            <div className="absolute top-0 right-0 p-8 opacity-20 rotate-12">
               <TrendingUp className="h-32 w-32" />
             </div>
             <div className="relative z-10 space-y-6">
               <h3 className="text-xs font-black uppercase tracking-[0.3em] text-slate-400">Total Valuation</h3>
               <div>
-                <p className="text-xs text-slate-400 font-bold mb-1 uppercase tracking-widest font-black italic">{totalSales > 0 ? "Live Revenue Active" : "Warehouse Audit"}</p>
+                <p className="text-xs text-slate-400 font-bold mb-1 uppercase tracking-widest font-black italic">{invoices.length > 0 ? "Live Revenue Active" : "Warehouse Audit"}</p>
                 <h2 className="text-4xl font-black italic tracking-tighter">₹{(products.reduce((acc, p) => acc + (p.quantity * p.purchasePrice), 0)).toLocaleString()}</h2>
               </div>
               <div className="grid grid-cols-2 gap-3 pt-2">
@@ -170,7 +251,7 @@ export default function DashboardPage() {
                 invoices.slice(0, 4).map((inv) => (
                   <div key={inv.id} className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-100 hover:border-primary-200 transition-all group">
                     <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-slate-400 shadow-sm group-hover:text-primary-600 transition-colors">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-slate-600 shadow-sm group-hover:text-primary-600 transition-colors border border-slate-50">
                         <Receipt className="h-5 w-5" />
                       </div>
                       <div>
@@ -190,9 +271,9 @@ export default function DashboardPage() {
                   </div>
                 ))
               ) : (
-                <div className="py-12 text-center space-y-3 opacity-20">
-                  <ShoppingCart className="h-10 w-10 mx-auto text-slate-400" />
-                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Terminal Idle</p>
+                <div className="py-12 text-center space-y-3 opacity-40">
+                  <ShoppingCart className="h-10 w-10 mx-auto text-slate-500" />
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Terminal Idle</p>
                 </div>
               )}
             </div>
@@ -200,13 +281,6 @@ export default function DashboardPage() {
         </div>
       </div>
     </div>
+    </SecurityWrapper>
   );
-}
-
-function formatDistanceToNow(date: Date) {
-  const diff = Math.floor((new Date().getTime() - date.getTime()) / 1000);
-  if (diff < 60) return `${diff}s`;
-  if (diff < 3600) return `${Math.floor(diff / 60)}m`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)}h`;
-  return `${Math.floor(diff / 86400)}d`;
 }

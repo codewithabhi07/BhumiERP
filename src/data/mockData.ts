@@ -113,4 +113,7 @@ export const mockSettings: ShopSettings = {
   gstNumber: '27ASAPM9464A1ZS',
   themeColor: '#7c3aed',
   currency: 'INR',
+  pin: '1234',
+  lowStockThreshold: 5,
+  invoiceType: 'A4',
 };

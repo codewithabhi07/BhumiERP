@@ -39,7 +39,7 @@ const ITEM_SHORTCUTS: Record<string, string> = {
   '15': 'Rumal (Handkerchief)', '16': 'Cap', '17': 'Socks', '18': 'Stole', '19': 'Petticoat',
   '20': 'Shawl', '21': 'Ramraj Shirt', '22': 'Siyaram Shirt', '23': 'Sweater',
   '24': 'Kurta Pajama', '25': 'Sherwani', '26': 'Jodhpuri', '27': 'Modi Jacket',
-  '28': 'Dhoti Pant', '29': 'Shawl', '30': 'Blazer', '31': '3 Pieces', '32': '5 Pieces',
+  '28': 'Dhoti Pant', '29': 'Muffler', '30': 'Blazer', '31': '3 Pieces', '32': '5 Pieces',
   '33': '1 Piece', '34': 'Lace', '35': 'Half Night Pant', '36': 'Dupatta',
   '37': 'Baby Dress', '38': 'Punjabi Dress', '39': 'Coat Set', '40': 'Baba Suit',
   '41': 'Palazzo Jeans', '42': 'Palazzo'
@@ -64,6 +64,7 @@ export default function BillingPage() {
   const [cart, setCart] = useState<InvoiceItem[]>([]);
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
+  const [billDate, setBillDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   
   // Totals
   const [discountPercent, setDiscountPercent] = useState(0);
@@ -101,13 +102,9 @@ export default function BillingPage() {
 
   useEffect(() => {
     if (!showHistory) {
-      if (isManualEntry) {
-        manualNameRef.current?.focus();
-      } else {
-        searchInputRef.current?.focus();
-      }
+      manualNameRef.current?.focus();
     }
-  }, [isManualEntry, showHistory]);
+  }, [showHistory]);
 
   // Customer History Lookup
   const customerHistory = useMemo(() => {
@@ -234,7 +231,7 @@ export default function BillingPage() {
       rounding,
       totalAmount,
       paymentMethod,
-      date: new Date().toISOString()
+      date: new Date(billDate).toISOString()
     };
 
     if (editingInvoiceId) {
@@ -307,121 +304,76 @@ export default function BillingPage() {
           </Button>
         </div>
 
-        <Card className="shadow-2xl border-none ring-1 ring-slate-100 overflow-visible relative">
-          <div className="flex flex-col gap-4">
-            <div className="flex gap-3">
-              <div className="relative flex-1 group">
-                <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400 group-focus-within:text-primary-500 transition-colors" />
+        <Card className="shadow-2xl border-none ring-1 ring-slate-100 overflow-hidden relative">
+          <div className="bg-gradient-to-br from-primary-50 to-white p-8 relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-10 opacity-5 rotate-12">
+              <Tags className="h-40 w-40 text-primary-600" />
+            </div>
+            <div className="grid grid-cols-12 gap-6 relative z-10">
+              <div className="col-span-12 md:col-span-4 relative">
                 <Input 
-                  ref={searchInputRef}
-                  placeholder="Scan barcode or type product name..." 
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && filteredProducts.length > 0) {
-                      addToCart(filteredProducts[0]);
-                    } else if (e.key === 'Enter' && !searchTerm) {
+                  ref={manualNameRef} label="Item Name (1-42 or Name)" 
+                  placeholder="Type code or name..." 
+                  value={manualItem.name}
+                  onChange={e => {
+                    const val = e.target.value;
+                    if (val.endsWith('++')) {
+                      // Trigger jump to customer name
+                      setManualItem({...manualItem, name: val.replace('++', '')});
                       custNameRef.current?.focus();
+                    } else {
+                      setManualItem({...manualItem, name: val});
                     }
                   }}
-                  className="pl-12 h-14 rounded-2xl bg-slate-50 border-transparent focus:bg-white text-base font-bold shadow-inner"
-                  disabled={isManualEntry}
+                  onKeyDown={handleManualNameShortcut}
+                  className="bg-white border-slate-200 h-14 text-base font-black shadow-sm"
                 />
-                {searchTerm && filteredProducts.length > 0 && (
-                  <div className="absolute top-full z-50 mt-3 w-full rounded-[2rem] border border-slate-100 bg-white shadow-[0_20px_50px_rgba(0,0,0,0.1)] overflow-hidden animate-in fade-in zoom-in duration-200">
-                    {filteredProducts.map(p => (
-                      <button
-                        key={p.id} onClick={() => addToCart(p)}
-                        className="flex w-full items-center justify-between p-5 hover:bg-primary-50/50 border-b last:border-0 border-slate-50 transition-all"
+                {manualItem.name && !ITEM_SHORTCUTS[manualItem.name] && ITEM_SUGGESTIONS.some(s => s.toLowerCase().includes(manualItem.name.toLowerCase())) && (
+                  <div className="absolute top-full z-10 mt-1 w-full bg-white border border-slate-200 rounded-2xl shadow-2xl py-1 max-h-60 overflow-y-auto">
+                    {ITEM_SUGGESTIONS.filter(s => s.toLowerCase().includes(manualItem.name.toLowerCase())).map(s => (
+                      <button 
+                        key={s} className="w-full text-left px-4 py-3 text-sm font-black uppercase hover:bg-primary-50 hover:text-primary-600 transition-colors"
+                        onClick={() => { setManualItem({...manualItem, name: s}); manualPriceRef.current?.focus(); }}
                       >
-                        <div className="flex flex-col items-start text-left">
-                          <span className="font-black text-slate-900 uppercase text-xs tracking-tight">{p.name}</span>
-                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Stock: {p.quantity} Units</span>
-                        </div>
-                        <div className="flex items-center gap-4">
-                          <span className="text-sm font-black text-primary-600 tracking-tighter">₹{p.sellingPrice}</span>
-                          <div className="bg-primary-600 p-1.5 rounded-lg shadow-lg shadow-primary-200">
-                            <Plus className="h-4 w-4 text-white" />
-                          </div>
-                        </div>
+                        {s}
                       </button>
                     ))}
                   </div>
                 )}
               </div>
-              <Button 
-                variant={isManualEntry ? 'primary' : 'outline'} 
-                className={cn(
-                  "gap-2 shrink-0 h-14 rounded-2xl border-2 transition-all font-black uppercase text-xs px-8", 
-                  isManualEntry ? "bg-primary-600 border-primary-600 shadow-xl shadow-primary-200" : "border-slate-200 text-slate-500"
-                )} 
-                onClick={() => setIsManualEntry(!isManualEntry)}
-              >
-                <Keyboard className="h-5 w-5" /> Manual (F2)
-              </Button>
-            </div>
-
-            {isManualEntry && (
-              <div className="bg-gradient-to-br from-primary-50 to-white p-6 rounded-[2.5rem] border-2 border-primary-100 animate-in fade-in slide-in-from-top-4 duration-300 shadow-xl relative overflow-hidden">
-                <div className="absolute top-0 right-0 p-10 opacity-5 rotate-12">
-                  <Tags className="h-32 w-32 text-primary-600" />
-                </div>
-                <div className="grid grid-cols-12 gap-4 relative z-10">
-                  <div className="col-span-12 md:col-span-4 relative">
-                    <Input 
-                      ref={manualNameRef} label="Item Name (1-42 + Enter)" 
-                      placeholder="Type number e.g. 1" 
-                      value={manualItem.name}
-                      onChange={e => setManualItem({...manualItem, name: e.target.value})}
-                      onKeyDown={handleManualNameShortcut}
-                      className="bg-white border-transparent h-11"
-                    />
-                    {manualItem.name && !ITEM_SHORTCUTS[manualItem.name] && ITEM_SUGGESTIONS.some(s => s.toLowerCase().includes(manualItem.name.toLowerCase())) && (
-                      <div className="absolute top-full z-10 mt-1 w-full bg-white border border-slate-200 rounded-xl shadow-lg py-1 max-h-40 overflow-y-auto">
-                        {ITEM_SUGGESTIONS.filter(s => s.toLowerCase().includes(manualItem.name.toLowerCase())).map(s => (
-                          <button 
-                            key={s} className="w-full text-left px-3 py-2 text-sm font-bold hover:bg-primary-50 hover:text-primary-600"
-                            onClick={() => { setManualItem({...manualItem, name: s}); manualPriceRef.current?.focus(); }}
-                          >
-                            {s}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  <div className="col-span-4 md:col-span-3">
-                    <Input 
-                      ref={manualPriceRef} label="Price (₹)" type="number" 
-                      value={manualItem.price || ''}
-                      onChange={e => setManualItem({...manualItem, price: Number(e.target.value)})}
-                      onKeyDown={(e) => handleKeyDown(e, manualQtyRef)}
-                      className="bg-white border-transparent h-11"
-                    />
-                  </div>
-                  <div className="col-span-4 md:col-span-2">
-                    <Input 
-                      ref={manualQtyRef} label="Quantity" type="number" 
-                      value={manualItem.quantity}
-                      onChange={e => setManualItem({...manualItem, quantity: Number(e.target.value)})}
-                      onKeyDown={(e) => handleKeyDown(e, manualSmanRef)}
-                      className="bg-white border-transparent h-11 text-center"
-                    />
-                  </div>
-                  <div className="col-span-4 md:col-span-2">
-                    <Input 
-                      ref={manualSmanRef} label="S.Man (1-4)" type="number" 
-                      value={manualItem.salesmanId}
-                      onChange={e => setManualItem({...manualItem, salesmanId: e.target.value})}
-                      onKeyDown={(e) => handleKeyDown(e, undefined, addManualToCart)}
-                      className="bg-white border-transparent h-11 text-center text-primary-600"
-                    />
-                  </div>
-                  <div className="col-span-12 md:col-span-2 flex items-end">
-                    <Button className="w-full h-10 rounded-xl font-black uppercase text-xs shadow-lg bg-primary-600" onClick={addManualToCart} disabled={!manualItem.name || manualItem.price <= 0}>Add</Button>
-                  </div>
-                </div>
+              <div className="col-span-4 md:col-span-3">
+                <Input 
+                  ref={manualPriceRef} label="Price (₹)" type="number" 
+                  value={manualItem.price || ''}
+                  onChange={e => setManualItem({...manualItem, price: Number(e.target.value)})}
+                  onKeyDown={(e) => handleKeyDown(e, manualQtyRef)}
+                  className="bg-white border-slate-200 h-14 text-center text-lg font-black shadow-sm"
+                />
               </div>
-            )}
+              <div className="col-span-4 md:col-span-2">
+                <Input 
+                  ref={manualQtyRef} label="Quantity" type="number" 
+                  value={manualItem.quantity}
+                  onChange={e => setManualItem({...manualItem, quantity: Number(e.target.value)})}
+                  onKeyDown={(e) => handleKeyDown(e, manualSmanRef)}
+                  className="bg-white border-slate-200 h-14 text-center text-lg font-black shadow-sm"
+                />
+              </div>
+              <div className="col-span-4 md:col-span-3">
+                <Input 
+                  ref={manualSmanRef} label="Salesman ID" type="text" 
+                  value={manualItem.salesmanId}
+                  onChange={e => setManualItem({...manualItem, salesmanId: e.target.value})}
+                  onKeyDown={(e) => handleKeyDown(e, undefined, addManualToCart)}
+                  className="bg-white border-slate-200 h-14 text-center text-lg font-black text-primary-600 shadow-sm"
+                />
+              </div>
+              <div className="col-span-12 flex justify-end pt-2">
+                <Button className="h-14 px-12 rounded-2xl font-black uppercase tracking-widest text-xs shadow-xl bg-primary-600 shadow-primary-100 hover:scale-105 transition-all" onClick={addManualToCart} disabled={!manualItem.name || manualItem.price <= 0}>
+                  <Plus className="h-5 w-5 mr-2" /> Add Item to List
+                </Button>
+              </div>
+            </div>
           </div>
         </Card>
 
@@ -512,6 +464,16 @@ export default function BillingPage() {
                 ref={custPhoneRef} placeholder="Mobile Number" value={customerPhone} 
                 onChange={e => setCustomerPhone(e.target.value)} onKeyDown={(e) => handleKeyDown(e, discountRef)} 
                 className="bg-slate-50/50 border-transparent h-12 pl-12 text-sm font-bold rounded-2xl" 
+              />
+            </div>
+
+            <div className="relative group">
+              <Clock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-primary-500 transition-colors" />
+              <input 
+                type="date"
+                value={billDate}
+                onChange={e => setBillDate(e.target.value)}
+                className="w-full bg-slate-50/50 border-none h-12 pl-11 text-sm font-bold rounded-2xl focus:ring-2 focus:ring-primary-500 outline-none uppercase"
               />
             </div>
 

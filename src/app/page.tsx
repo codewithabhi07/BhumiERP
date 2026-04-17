@@ -51,7 +51,11 @@ export default function DashboardPage() {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
+    // Add a slight delay to ensure layout is ready for Recharts
+    const timer = setTimeout(() => {
+      setMounted(true);
+    }, 500);
+    return () => clearTimeout(timer);
   }, []);
 
   const today = new Date();

@@ -11,7 +11,7 @@
       "barcode": "8901234567890",
       "purchasePrice": 800,
       "sellingPrice": 1499,
-      "quantity": 23,
+      "quantity": 25,
       "minQuantity": 5,
       "createdAt": "2026-03-10T10:00:00Z"
     },
@@ -230,140 +230,18 @@
       "totalAmount": 555,
       "paymentMethod": "UPI",
       "date": "2026-04-16T11:00:32.716Z"
-    },
-    {
-      "id": "1776403958257",
-      "invoiceNumber": "INV-9346",
-      "customerName": "Lalit",
-      "customerPhone": "",
-      "items": [
-        {
-          "productId": "manual-1776403950840",
-          "name": "Shirt",
-          "color": "Mix",
-          "price": 250,
-          "quantity": 1,
-          "discount": 0,
-          "total": 250,
-          "salesmanId": "05",
-          "salesmanName": "N/A"
-        }
-      ],
-      "subTotal": 250,
-      "tax": 0,
-      "discount": 0,
-      "rounding": 0,
-      "totalAmount": 250,
-      "paymentMethod": "Cash",
-      "date": "2026-04-17T05:32:38.257Z"
-    },
-    {
-      "id": "1776406703559",
-      "invoiceNumber": "INV-9347",
-      "customerName": "Lalit",
-      "customerPhone": "7788778877",
-      "items": [
-        {
-          "productId": "manual-1776406688613",
-          "name": "Ladies Bra",
-          "color": "Mix",
-          "price": 250,
-          "quantity": 1,
-          "discount": 0,
-          "total": 250,
-          "salesmanId": "2",
-          "salesmanName": "ganu"
-        }
-      ],
-      "subTotal": 250,
-      "tax": 0,
-      "discount": 0,
-      "rounding": 0,
-      "totalAmount": 250,
-      "paymentMethod": "UPI",
-      "date": "2026-04-17T06:18:23.559Z"
-    },
-    {
-      "id": "1776406882987",
-      "invoiceNumber": "INV-9348",
-      "customerName": "Ganesh Mali",
-      "customerPhone": "7775025688",
-      "items": [
-        {
-          "productId": "manual-1776406850000",
-          "name": "Regular Fit Chinos",
-          "color": "Khaki",
-          "price": 2299,
-          "quantity": 1,
-          "discount": 0,
-          "total": 2299,
-          "salesmanId": "0",
-          "salesmanName": "N/A"
-        }
-      ],
-      "subTotal": 2299,
-      "tax": 0,
-      "discount": 0,
-      "rounding": 0,
-      "totalAmount": 2299,
-      "paymentMethod": "UPI",
-      "date": "2026-04-17T06:21:22.987Z"
     }
   ],
   "settings": {
-    "shopName": "BHUMIKA GARMENTS Parola",
-    "ownerName": "Lalit Mali",
+    "shopName": "BHUMIKA GARMENTS",
+    "ownerName": "Ganesh Mahajan",
     "address": "Minatai Thakare Complex, Parola, Maharashtra (27)",
-    "phone": "7775025688",
+    "phone": "9975345692",
     "gstNumber": "27ASAPM9464A1ZS",
     "themeColor": "#7c3aed",
     "currency": "INR",
     "pin": "1234",
     "lowStockThreshold": 5,
-    "invoiceType": "A4 Half"
-  },
-  "salesmen": [
-    {
-      "id": "1",
-      "name": "Lalit",
-      "phone": "",
-      "commissionRate": 1
-    },
-    {
-      "id": "2",
-      "name": "ganu",
-      "phone": "",
-      "commissionRate": 1
-    }
-  ]
-}od": "Cash",
-      "date": "2026-04-17T09:30:17.753Z"
-    }
-  ],
-  "settings": {
-    "shopName": "BHUMIKA GARMENTS Parola",
-    "ownerName": "Lalit Mali",
-    "address": "Minatai Thakare Complex, Parola, Maharashtra (27)",
-    "phone": "7775025688",
-    "gstNumber": "27ASAPM9464A1ZS",
-    "themeColor": "#7c3aed",
-    "currency": "INR",
-    "pin": "1234",
-    "lowStockThreshold": 5,
-    "invoiceType": "A4 Half"
-  },
-  "salesmen": [
-    {
-      "id": "1",
-      "name": "Lalit",
-      "phone": "",
-      "commissionRate": 1
-    },
-    {
-      "id": "2",
-      "name": "ganu",
-      "phone": "",
-      "commissionRate": 1
-    }
-  ]
+    "invoiceType": "A4"
+  }
 }

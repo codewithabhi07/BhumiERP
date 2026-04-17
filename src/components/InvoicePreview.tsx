@@ -3,6 +3,7 @@ import { Button } from '../components/ui/Button';
 import { Printer, X } from 'lucide-react';
 import type { Invoice, ShopSettings, InvoiceItem } from '../types';
 import { cn } from '../utils/cn';
+import { format } from 'date-fns';
 
 interface InvoicePreviewProps {
   invoice: Invoice;
@@ -11,11 +12,11 @@ interface InvoicePreviewProps {
 }
 
 export function InvoicePreview({ invoice, settings, onClose }: InvoicePreviewProps) {
-  const isThermal = settings.invoiceType === 'Thermal';
   const isA4Half = settings.invoiceType === 'A4 Half';
   
-  const ITEMS_PER_PAGE = isThermal ? 100 : (isA4Half ? 8 : 18);
-  
+  // REDUCED ITEMS PER PAGE: 8 items for half page ensures price/totals are never pushed off the paper
+  const ITEMS_PER_PAGE = isA4Half ? 8 : 22;
+
   const handlePrint = () => {
     window.print();
   };
@@ -29,256 +30,224 @@ export function InvoicePreview({ invoice, settings, onClose }: InvoicePreviewPro
     return chunks;
   }, [invoice.items, ITEMS_PER_PAGE]);
 
-  const ThermalLayout = () => (
-    <div className="w-[80mm] mx-auto p-4 bg-white text-black font-mono text-[12px] leading-tight">
-      <div className="text-center border-b border-dashed border-black pb-4 mb-4">
-        <h1 className="text-xl font-bold uppercase">{settings.shopName}</h1>
-        <p className="text-[10px] mt-1">{settings.address}</p>
-        <p className="text-[10px]">Ph: {settings.phone}</p>
-        {settings.gstNumber && <p className="text-[10px]">GST: {settings.gstNumber}</p>}
-      </div>
-
-      <div className="flex justify-between text-[10px] mb-2 font-bold">
-        <span>Bill: #{invoice.invoiceNumber}</span>
-        <span>{new Date(invoice.date).toLocaleDateString()}</span>
-      </div>
-      
-      <div className="border-b border-dashed border-black mb-2 pb-1">
-        <p className="text-[10px] uppercase font-bold">Customer: {invoice.customerName || 'Cash'}</p>
-      </div>
-
-      <table className="w-full mb-4">
-        <thead>
-          <tr className="border-b border-black">
-            <th className="text-left py-1">Item</th>
-            <th className="text-center py-1">Qty</th>
-            <th className="text-right py-1">Amt</th>
-          </tr>
-        </thead>
-        <tbody>
-          {invoice.items.map((item, idx) => (
-            <tr key={idx}>
-              <td className="py-1 uppercase truncate max-w-[40mm]">{item.name}</td>
-              <td className="py-1 text-center">{item.quantity}</td>
-              <td className="py-1 text-right">₹{item.total.toFixed(0)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-
-      <div className="border-t border-dashed border-black pt-2 space-y-1">
-        <div className="flex justify-between">
-          <span>Subtotal:</span>
-          <span>₹{invoice.subTotal.toFixed(0)}</span>
-        </div>
-        {invoice.discount > 0 && (
-          <div className="flex justify-between">
-            <span>Discount (-):</span>
-            <span>₹{invoice.discount.toFixed(0)}</span>
-          </div>
-        )}
-        <div className="flex justify-between text-lg font-bold border-t border-black pt-1">
-          <span>TOTAL:</span>
-          <span>₹{invoice.totalAmount.toFixed(0)}</span>
-        </div>
-      </div>
-
-      <div className="text-center mt-6 pt-4 border-t border-dashed border-black">
-        <p className="text-[10px] font-bold">THANK YOU! VISIT AGAIN</p>
-        <p className="text-[8px] mt-1 italic">Software by BhumiERP</p>
-      </div>
-    </div>
-  );
-
-  const InvoicePage = ({ chunk, pageIdx, totalPages }: { chunk: InvoiceItem[], pageIdx: number, totalPages: number }) => (
-    <div className="flex-1 p-0 bg-white relative flex flex-col text-black font-sans" style={{ fontSize: '13px', lineHeight: '1.4' }}>
-      <div className="flex flex-col h-full border-[2px] border-black p-5 print:p-6 box-border">
-        <div className="flex justify-between items-start border-b-2 border-black pb-4 mb-4">
-          <div className="space-y-1">
-            <h1 className="text-3xl font-black uppercase tracking-tight text-slate-900 leading-none mb-1">{settings.shopName}</h1>
-            <div className="space-y-0.5 text-[11px] font-bold uppercase tracking-tight text-slate-700">
-              <p className="text-sm font-black text-black">Proprietor: {settings.ownerName}</p>
-              <p className="max-w-[450px] leading-tight">{settings.address}</p>
-              <div className="flex gap-6 mt-1">
-                <p>Contact: +91 {settings.phone}</p>
-                {settings.gstNumber && <p>GSTIN: {settings.gstNumber}</p>}
-              </div>
-            </div>
-          </div>
-          <div className="text-right flex flex-col items-end min-w-[150px]">
-            <h2 className="text-lg font-black border-2 border-black px-4 py-1.5 uppercase tracking-[0.2em] mb-3 bg-slate-50">TAX INVOICE</h2>
-            <div className="text-[11px] space-y-1 font-bold text-right uppercase">
-              <p>Invoice No: <span className="text-sm font-black">{invoice.invoiceNumber}</span></p>
-              <p>Date: <span className="text-sm font-black">{new Date(invoice.date).toLocaleDateString('en-IN')}</span></p>
-              {totalPages > 1 && <p className="italic text-slate-500 pt-1">Page {pageIdx + 1} of {totalPages}</p>}
-            </div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4 py-3 border-b-2 border-black mb-4">
-          <div>
-            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-0.5">Billed To:</p>
-            <p className="text-lg font-black uppercase tracking-tight text-black">{invoice.customerName || 'Cash Customer'}</p>
-            {invoice.customerPhone && <p className="text-[11px] font-bold text-slate-600 mt-0.5">Mobile: +91 {invoice.customerPhone}</p>}
-          </div>
-          <div className="text-right flex flex-col justify-center">
-            <p className="text-[11px] font-black uppercase tracking-widest text-slate-400 mb-0.5">Payment Details:</p>
-            <div className="flex flex-col items-end gap-0.5">
-              <p className="text-sm font-black uppercase text-slate-900">{invoice.paymentMethod}</p>
-              <p className="text-[10px] font-black uppercase tracking-widest text-emerald-600 border border-emerald-100 px-2 rounded-full bg-emerald-50">Payment Received</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex-1">
-          <table className="w-full text-left border-collapse border border-black">
-            <thead>
-              <tr className="bg-slate-100 border-b-2 border-black">
-                <th className="py-2 px-2 border-r border-black font-black uppercase text-[10px] text-center w-10">Sr.</th>
-                <th className="py-2 px-3 border-r border-black font-black uppercase text-[10px]">Description of Goods</th>
-                <th className="py-2 px-2 border-r border-black font-black uppercase text-[10px] text-center w-16">Qty</th>
-                <th className="py-2 px-2 border-r border-black font-black uppercase text-[10px] text-center w-16">Staff</th>
-                <th className="py-2 px-3 border-r border-black font-black uppercase text-[10px] text-right w-24">Rate (₹)</th>
-                <th className="py-2 px-3 font-black uppercase text-[10px] text-right w-28">Amount (₹)</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-200">
-              {chunk.map((item, idx) => (
-                <tr key={idx} className="border-b border-slate-100">
-                  <td className="py-2 px-2 border-r border-black text-center font-bold text-[12px]">{pageIdx * ITEMS_PER_PAGE + idx + 1}</td>
-                  <td className="py-2 px-3 border-r border-black uppercase font-bold text-[12px]">{item.name}</td>
-                  <td className="py-2 px-2 border-r border-black text-center font-black text-[12px]">{item.quantity}</td>
-                  <td className="py-2 px-2 border-r border-black text-center font-bold text-[11px] text-slate-500">{item.salesmanId || '-'}</td>
-                  <td className="py-2 px-3 border-r border-black text-right font-bold text-[12px]">{item.price.toFixed(0)}</td>
-                  <td className="py-2 px-3 text-right font-black text-[12px]">₹{item.total.toFixed(0)}</td>
-                </tr>
-              ))}
-              {[...Array(Math.max(0, ITEMS_PER_PAGE - chunk.length))].map((_, i) => (
-                <tr key={`empty-${i}`} className="h-9 border-none">
-                  <td className="border-r border-black opacity-0"></td>
-                  <td colSpan={5} className="border-r border-black"></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        <div className="mt-4 pt-4 border-t-2 border-black">
-          {pageIdx === totalPages - 1 ? (
-            <div className="flex justify-between items-start">
-              <div className="max-w-[380px] space-y-4">
-                <div className="p-3 border border-slate-300 rounded-lg bg-slate-50 text-[10px] space-y-1.5 uppercase tracking-tighter font-bold">
-                  <p className="font-black underline mb-1">Terms & Conditions:</p>
-                  <p>1. Goods once sold will not be taken back or refunded.</p>
-                  <p>2. Exchange allowed within 7 days with this invoice copy.</p>
-                  <p>3. Colors and Wash of cotton articles are not guaranteed.</p>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-base font-black italic text-slate-900 uppercase tracking-tighter">✨ Thank You For Your Visit! ✨</p>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">BHUMIKA GARMENTS • PAROLA</p>
-                </div>
-              </div>
-              <div className="w-72">
-                <table className="w-full border-collapse border-2 border-black text-[11px] font-bold uppercase tracking-tight">
-                  <tbody>
-                    <tr className="border-b border-black">
-                      <td className="py-1.5 px-3 border-r-2 border-black">Gross Total</td>
-                      <td className="py-1.5 px-3 text-right">₹{invoice.subTotal.toFixed(0)}</td>
-                    </tr>
-                    {invoice.discount > 0 && (
-                      <tr className="border-b border-black text-rose-600 font-black italic">
-                        <td className="py-1.5 px-3 border-r-2 border-black">Discount Applied (-)</td>
-                        <td className="py-1.5 px-3 text-right">-₹{invoice.discount.toFixed(0)}</td>
-                      </tr>
-                    )}
-                    <tr className="bg-black text-white text-base">
-                      <td className="py-2.5 px-3 border-r-2 border-white font-black tracking-widest">NET PAYABLE</td>
-                      <td className="py-2.5 px-3 text-right font-black italic text-xl">₹{invoice.totalAmount.toFixed(0)}</td>
-                    </tr>
-                  </tbody>
-                </table>
-                <div className="pt-12 text-center">
-                  <div className="h-px w-full bg-black mb-1 opacity-40" />
-                  <p className="text-[10px] font-black uppercase tracking-[0.4em] pl-1">Authorized Signatory</p>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="flex justify-between items-center py-4">
-              <p className="text-[11px] font-black uppercase italic tracking-widest text-slate-400">... Continued on Page {pageIdx + 2}</p>
-              <div className="text-right pt-6 min-w-[200px]">
-                <div className="h-px w-full bg-black mb-1 opacity-20" />
-                <p className="text-[10px] font-black uppercase tracking-widest text-slate-300">For {settings.shopName}</p>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm print:p-0 print:bg-white overflow-y-auto">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/90 p-4 backdrop-blur-md print:bg-white print:p-0 overflow-y-auto">
       <style>
         {`
           @media print {
-            @page { 
-              size: ${isThermal ? '80mm 200mm' : (isA4Half ? 'A4 landscape' : 'A4 portrait')}; 
-              margin: 0 !important; 
+            @page {
+              size: A4 portrait;
+              margin: 0 !important;
             }
-            body { 
-              margin: 0 !important; 
-              padding: 0 !important; 
-              background: white !important; 
-            }
-            .print-hidden { display: none !important; }
-            .bill-page { 
-              height: ${isThermal ? 'auto' : (isA4Half ? '148mm' : '297mm')} !important;
-              width: ${isThermal ? '80mm' : (isA4Half ? '210mm' : '210mm')} !important;
-              padding: ${isThermal ? '0' : (isA4Half ? '10mm 15mm' : '10mm 15mm')} !important;
-              box-sizing: border-box !important;
-              page-break-after: always !important;
+
+            html, body {
+              margin: 0 !important;
+              padding: 0 !important;
               background: white !important;
-              overflow: hidden !important;
+              width: 210mm !important;
+              height: 297mm !important;
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
+            }
+
+            .print-hidden {
+              display: none !important;
+            }
+
+            /* The physical A4 sheet */
+            .a4-container {
+              width: 210mm !important;
+              height: 297mm !important;
               margin: 0 auto !important;
+              padding: 0 !important;
+              page-break-after: always !important;
+              break-after: page !important;
+              background: white !important;
               display: block !important;
             }
-            .bill-page:last-child {
-              page-break-after: auto !important;
+
+            /* The actual Bill content - reduced height to 142mm to leave 6mm safety margin at bottom */
+            .bill-content {
+              width: 210mm !important;
+              height: ${isA4Half ? '142mm' : '290mm'} !important;
+              padding: 10mm 15mm 5mm 15mm !important;
+              box-sizing: border-box !important;
+              overflow: hidden !important;
+              display: flex !important;
+              flex-direction: column !important;
+              background: white !important;
+              position: relative !important;
             }
           }
         `}
       </style>
-      
-      <div className={cn(
-        "flex flex-col h-full max-h-[95vh] bg-white shadow-2xl rounded-[3rem] overflow-hidden print:shadow-none print:rounded-none my-auto border border-white/20",
-        isThermal ? "w-full max-w-sm" : (isA4Half ? "w-full max-w-5xl" : "w-full max-w-4xl")
-      )}>
-        <div className="flex items-center justify-between border-b border-slate-100 px-10 py-6 print-hidden shrink-0 bg-white">
+
+      <div className="flex flex-col w-full max-w-5xl bg-white rounded-[3rem] shadow-2xl overflow-hidden print:shadow-none print:rounded-none print:max-w-none my-auto">
+        <div className="print-hidden flex items-center justify-between border-b border-slate-100 px-10 py-6 shrink-0 bg-white">
           <div>
-            <h3 className="text-2xl font-black text-slate-900 uppercase italic tracking-tighter">BHUMIKA <span className="text-primary-600 italic">ERP</span></h3>
+            <h3 className="text-2xl font-black text-slate-900 uppercase italic tracking-tighter">
+              BHUMIKA <span className="text-primary-600 italic">ERP</span>
+            </h3>
             <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1 flex items-center gap-2 font-black">
               <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-              {isThermal ? "Thermal 80mm Receipt Mode" : (isA4Half ? "A4 Half Landscape Mode" : "Standard A4 Layout Mode")}
+              {isA4Half ? 'Safe-Print A4 Half Mode' : 'Standard Full A4 Mode'}
             </p>
           </div>
+
           <div className="flex items-center gap-4">
-            <Button className="gap-3 h-14 px-10 rounded-[1.25rem] font-black uppercase text-sm shadow-2xl shadow-primary-200 bg-primary-600 hover:bg-primary-700" onClick={handlePrint}>
-              <Printer className="h-6 w-6" /> Print
+            <Button
+              className="gap-3 h-14 px-10 rounded-[1.25rem] font-black uppercase text-sm shadow-2xl shadow-primary-200 bg-primary-600 hover:bg-primary-700"
+              onClick={handlePrint}
+            >
+              <Printer className="h-6 w-6" /> Confirm Print
             </Button>
-            <Button variant="ghost" size="icon" onClick={onClose} className="h-14 w-14 rounded-2xl bg-slate-50 hover:bg-rose-50 hover:text-rose-600">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onClose}
+              className="h-14 w-14 rounded-2xl bg-slate-50 hover:bg-rose-50 hover:text-rose-600"
+            >
               <X className="h-7 w-7" />
             </Button>
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto print:overflow-visible bg-slate-50/50 p-10 print:p-0">
+        <div className="flex-1 overflow-y-auto bg-slate-100 print:bg-white p-10 print:p-0">
           {itemChunks.map((chunk, idx) => (
-            <div key={idx} className="bill-page bg-white shadow-sm print:shadow-none mx-auto print:m-0 mb-16">
-              {isThermal ? <ThermalLayout /> : <InvoicePage chunk={chunk} pageIdx={idx} totalPages={itemChunks.length} />}
+            <div key={idx} className="a4-container shadow-2xl shadow-slate-300/50 mb-12 print:shadow-none print:m-0 mx-auto bg-white">
+              <div className="bill-content">
+                <InvoicePage 
+                  chunk={chunk} 
+                  pageIdx={idx} 
+                  totalPages={itemChunks.length} 
+                  settings={settings} 
+                  invoice={invoice} 
+                  isA4Half={isA4Half}
+                  ITEMS_PER_PAGE={ITEMS_PER_PAGE}
+                />
+              </div>
             </div>
           ))}
         </div>
+      </div>
+    </div>
+  );
+}
+
+function InvoicePage({ chunk, pageIdx, totalPages, settings, invoice, isA4Half, ITEMS_PER_PAGE }: any) {
+  return (
+    <div className="flex flex-col h-full bg-white relative text-black">
+      {/* Header */}
+      <div className={cn("flex justify-between items-start border-b-2 border-black", isA4Half ? "pb-2 mb-2" : "pb-4 mb-4")}>
+        <div className="space-y-0.5">
+          <h1 className={cn("font-black uppercase italic leading-none text-slate-900", isA4Half ? "text-3xl" : "text-5xl")}>
+            {settings.shopName}
+          </h1>
+          <p className={cn("font-black text-primary-600 uppercase tracking-widest", isA4Half ? "text-[10px]" : "text-sm")}>
+            {settings.ownerName} (Proprietor)
+          </p>
+          <div className={cn("space-y-0.5", isA4Half ? "pt-1" : "pt-2")}>
+            <p className="text-[10px] font-bold text-slate-600 uppercase leading-tight max-w-[450px]">{settings.address}</p>
+            <div className="flex gap-4">
+              <p className="text-[11px] font-black uppercase">Phone: +91 {settings.phone}</p>
+              {settings.gstNumber && <p className="text-[11px] font-black uppercase">GSTIN: {settings.gstNumber}</p>}
+            </div>
+          </div>
+        </div>
+        <div className="text-right flex flex-col items-end">
+          <div className="bg-black text-white px-4 py-1 rounded-lg mb-2 shadow-sm">
+            <span className="text-[10px] font-black uppercase tracking-widest">Tax Invoice</span>
+          </div>
+          <div className="space-y-0.5">
+            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none">Invoice No</p>
+            <p className="text-xl font-black italic tracking-tighter leading-none">{invoice.invoiceNumber}</p>
+            <p className="text-[11px] font-black uppercase leading-none mt-2">{format(new Date(invoice.date), 'dd MMM yyyy')}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Bill To */}
+      <div className={cn("grid grid-cols-2 gap-4 bg-slate-50 border border-slate-200", isA4Half ? "p-2 rounded-xl mb-2" : "p-4 rounded-2xl mb-4")}>
+        <div>
+          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Customer:</p>
+          <p className="text-base font-black uppercase tracking-tight">{invoice.customerName || 'Cash Customer'}</p>
+          {invoice.customerPhone && <p className="text-[10px] font-bold text-slate-500">Contact: +91 {invoice.customerPhone}</p>}
+        </div>
+        <div className="text-right flex flex-col justify-center">
+          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Payment:</p>
+          <p className="text-sm font-black uppercase italic tracking-widest text-primary-600">{invoice.paymentMethod}</p>
+        </div>
+      </div>
+
+      {/* Items Table - flex-1 ensures it takes available space but doesn't push others */}
+      <div className="flex-1 overflow-hidden">
+        <table className="w-full text-left border-collapse border-b-2 border-black">
+          <thead>
+            <tr className="bg-slate-100 border-y-2 border-black">
+              <th className="py-1.5 px-2 text-[10px] font-black uppercase border-r border-slate-300 w-10 text-center">Sr.</th>
+              <th className="py-1.5 px-3 text-[10px] font-black uppercase border-r border-slate-300">Description</th>
+              <th className="py-1.5 px-2 text-[10px] font-black uppercase border-r border-slate-300 text-center w-12">Staff</th>
+              <th className="py-1.5 px-2 text-[10px] font-black uppercase border-r border-slate-300 text-center w-16">Rate</th>
+              <th className="py-1.5 px-2 text-[10px] font-black uppercase border-r border-slate-300 text-center w-10">Qty</th>
+              <th className="py-1.5 px-3 text-[10px] font-black uppercase text-right w-24">Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            {chunk.map((item: any, idx: number) => (
+              <tr key={idx} className="border-b border-slate-200">
+                <td className="py-1 px-2 text-[11px] font-bold border-r border-slate-200 text-center">{pageIdx * ITEMS_PER_PAGE + idx + 1}</td>
+                <td className="py-1 px-3 text-[11px] font-black uppercase italic border-r border-slate-200">{item.name}</td>
+                <td className="py-1 px-2 text-[10px] font-black text-slate-400 border-r border-slate-200 text-center">#{item.salesmanId}</td>
+                <td className="py-1 px-2 text-[11px] font-bold border-r border-slate-200 text-center">{item.price.toLocaleString()}</td>
+                <td className="py-1 px-2 text-[11px] font-black border-r border-slate-200 text-center">{item.quantity}</td>
+                <td className="py-1 px-3 text-[11px] font-black text-right">{item.total.toLocaleString()}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Totals Section - This is now guaranteed to be inside 142mm */}
+      <div className={cn("border-t-2 border-black", isA4Half ? "pt-2" : "pt-4")}>
+        <div className="flex justify-between items-end gap-8">
+          <div className="flex-1 space-y-2">
+            <div className="bg-black text-white p-3 rounded-xl flex justify-between items-center shadow-lg">
+              <div>
+                <p className="text-[9px] font-black uppercase tracking-[0.2em] opacity-60">Net Payable</p>
+              </div>
+              <div className="text-right">
+                <h2 className={cn("font-black italic tracking-tighter leading-none", isA4Half ? "text-3xl" : "text-5xl")}>
+                  ₹{invoice.totalAmount.toLocaleString()}
+                </h2>
+              </div>
+            </div>
+            <p className="text-[7px] font-bold text-slate-400 uppercase leading-tight italic">
+              * Terms: Goods once sold will not be taken back. Exchange within 7 days. Cotton wash not guaranteed.
+            </p>
+          </div>
+
+          <div className="w-48 space-y-1">
+            <div className="flex justify-between text-[10px] font-bold uppercase">
+              <span className="text-slate-500">Subtotal</span>
+              <span className="text-slate-900 font-black">₹{invoice.subTotal.toLocaleString()}</span>
+            </div>
+            {invoice.discount > 0 && (
+              <div className="flex justify-between text-[10px] font-black uppercase text-rose-600 italic">
+                <span>Disc (-)</span>
+                <span>₹{invoice.discount.toLocaleString()}</span>
+              </div>
+            )}
+            <div className="pt-2 mt-2 border-t border-slate-200 flex justify-center">
+               <p className="text-[8px] font-black uppercase tracking-widest text-slate-400">Authorized Signatory</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div className="mt-4 text-center">
+        <p className="text-[9px] font-black tracking-[0.3em] uppercase italic text-slate-900">THANK YOU! VISIT AGAIN</p>
+        <p className="text-[8px] font-bold text-slate-300 mt-1 uppercase tracking-widest">{pageIdx + 1} / {totalPages}</p>
       </div>
     </div>
   );

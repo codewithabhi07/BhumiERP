@@ -3,10 +3,11 @@ import { readDB, writeDB } from '@/utils/db';
 
 export async function GET() {
   try {
+    console.log('API: Fetching salaries...');
     const db = await readDB();
     return NextResponse.json(db.salaryPayments || []);
   } catch (error: any) {
-    console.error('API Error (GET /api/salaries):', error);
+    console.error('API ERROR (GET /api/salaries):', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

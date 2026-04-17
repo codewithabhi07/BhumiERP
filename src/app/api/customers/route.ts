@@ -3,11 +3,17 @@ import { readDB, writeDB } from '@/utils/db';
 
 export async function GET() {
   try {
+    console.log('API: Fetching customers...');
     const db = await readDB();
+    console.log('API: DB read successful. Customer count:', db.customers?.length || 0);
     return NextResponse.json(db.customers || []);
   } catch (error: any) {
-    console.error('API Error (GET /api/customers):', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error('API ERROR (GET /api/customers):', error);
+    return NextResponse.json({ 
+      error: 'Internal Server Error', 
+      details: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined 
+    }, { status: 500 });
   }
 }
 

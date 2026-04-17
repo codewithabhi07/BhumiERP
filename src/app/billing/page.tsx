@@ -23,14 +23,14 @@ import {
   User,
   Tags,
   ShoppingCart,
-  Printer,
   Star,
-  Clock
+  Clock,
+  Printer
 } from 'lucide-react';
 import type { Product, InvoiceItem, Invoice } from '../../types';
-import { InvoicePreview } from '../../components/InvoicePreview';
 import { cn } from '../../utils/cn';
 import { format } from 'date-fns';
+import { InvoicePreview } from '../../components/InvoicePreview';
 
 const ITEM_SHORTCUTS: Record<string, string> = {
   '1': 'Shirt', '2': 'Pant', '3': 'T-Shirt', '4': 'Night Pant', '5': 'Knicker',
@@ -288,7 +288,7 @@ export default function BillingPage() {
 
   return (
     <div className="grid grid-cols-12 gap-6 pb-10 max-w-[1600px] mx-auto animate-slide-up">
-      {lastInvoice && (
+      {lastInvoice && settings && (
         <InvoicePreview invoice={lastInvoice} settings={settings} onClose={() => { setLastInvoice(null); searchInputRef.current?.focus(); }} />
       )}
       
@@ -454,11 +454,16 @@ export default function BillingPage() {
                   />
                 </TableCell>
                 <TableCell>
-                  <input 
-                    type="text" value={item.salesmanId}
-                    onChange={(e) => updateCartItem(item.productId, { salesmanId: e.target.value })}
-                    className="w-8 bg-transparent text-center font-black text-primary-600 text-xs focus:outline-none focus:ring-2 focus:ring-primary-500 rounded py-1 transition-all uppercase"
-                  />
+                  <div className="flex flex-col items-center gap-1">
+                    <input 
+                      type="text" value={item.salesmanId}
+                      onChange={(e) => updateCartItem(item.productId, { salesmanId: e.target.value })}
+                      className="w-10 bg-slate-50 border-none rounded-lg text-center font-black text-primary-600 text-xs focus:ring-2 focus:ring-primary-500 py-1 transition-all uppercase"
+                    />
+                    <span className="text-[8px] font-bold text-slate-400 uppercase truncate max-w-[50px]">
+                      {item.salesmanName}
+                    </span>
+                  </div>
                 </TableCell>
                 <TableCell className="font-black text-slate-900 text-sm">₹{item.total.toFixed(0)}</TableCell>
                 <TableCell>

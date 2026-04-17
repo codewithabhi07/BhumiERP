@@ -215,7 +215,7 @@ export default function ReportsPage() {
           <div className="space-y-6 p-2">
             <div className="flex justify-between items-start border-b-2 border-slate-100 pb-6">
               <div>
-                <h2 className="text-2xl font-black text-slate-900 tracking-tighter uppercase italic">{settings?.shopName || 'Bhumika Garments'}</h2>
+                <h2 className="text-2xl font-black text-slate-900 tracking-tighter uppercase italic">{settings?.shopName || 'ERP System for Garments Retail'}</h2>
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">{settings?.address}</p>
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">GST: {settings?.gstNumber}</p>
               </div>

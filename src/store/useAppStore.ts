@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { Customer, Employee, Invoice, SalaryPayment, ShopSettings, Attendance, LeaveRequest } from '../types';
+import type { Customer, Employee, Invoice, SalaryPayment, ShopSettings, Attendance, LeaveRequest, Salesman } from '../types';
 
 interface AppState {
   customers: Customer[];
@@ -61,6 +61,7 @@ export const useAppStore = create<AppState>()((set, get) => ({
   attendance: [],
   leaveRequests: [],
   salaryPayments: [],
+  salesmen: [],
   invoices: [],
   settings: null,
   isAuthenticated: false, 

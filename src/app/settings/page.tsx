@@ -144,33 +144,15 @@ export default function SettingsPage() {
                     <Printer className="h-4 w-4 text-emerald-500" />
                     <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Invoice Print Format</span>
                   </div>
-                  <div className="grid grid-cols-3 gap-2">
-                    <button 
-                      onClick={() => setFormData({...formData, invoiceType: 'A4'})}
-                      className={cn(
-                        "h-14 rounded-2xl font-black text-[10px] uppercase transition-all border-2",
-                        formData.invoiceType === 'A4' ? "bg-emerald-500 text-white border-emerald-500 shadow-lg shadow-emerald-100" : "bg-slate-50 text-slate-400 border-transparent"
-                      )}
-                    >
-                      A4 Page
-                    </button>
+                  <div className="grid grid-cols-1 gap-2">
                     <button 
                       onClick={() => setFormData({...formData, invoiceType: 'A4 Half'})}
                       className={cn(
-                        "h-14 rounded-2xl font-black text-[10px] uppercase transition-all border-2",
+                        "h-14 rounded-2xl font-black text-xs uppercase transition-all border-2",
                         formData.invoiceType === 'A4 Half' ? "bg-emerald-500 text-white border-emerald-500 shadow-lg shadow-emerald-100" : "bg-slate-50 text-slate-400 border-transparent"
                       )}
                     >
-                      A4 Half
-                    </button>
-                    <button 
-                      onClick={() => setFormData({...formData, invoiceType: 'Thermal'})}
-                      className={cn(
-                        "h-14 rounded-2xl font-black text-[10px] uppercase transition-all border-2",
-                        formData.invoiceType === 'Thermal' ? "bg-emerald-500 text-white border-emerald-500 shadow-lg shadow-emerald-100" : "bg-slate-50 text-slate-400 border-transparent"
-                      )}
-                    >
-                      Thermal
+                      Standard A4 Half Page
                     </button>
                   </div>
                   <p className="text-[9px] font-bold text-slate-400 uppercase leading-relaxed text-center">Select your connected printer type.</p>

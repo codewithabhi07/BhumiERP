@@ -74,7 +74,7 @@ export default function DashboardPage() {
     const dateStr = new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
     const BAPU_NUMBER = '9890001054';
     
-    let reportMsg = `*Daily Sales Report - Bhumika Garments*\n`;
+    let reportMsg = `*Daily Sales Report - ERP System for Garments Retail*\n`;
     reportMsg += `*Date:* ${dateStr}\n`;
     reportMsg += `----------------------------\n`;
     reportMsg += `💰 *Cash Collection:* ₹${cashSalesToday.toLocaleString()}\n`;

@@ -31,7 +31,7 @@ function CustomersContent() {
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isBroadcastOpen, setIsBroadcastOpen] = useState(false);
-  const [broadcastMessage, setBroadcastMessage] = useState('Bhumika Garments Update: New stock has arrived! Visit us today for exclusive designs and exciting offers. See you soon!');
+  const [broadcastMessage, setBroadcastMessage] = useState('ERP system  Update: New stock has arrived! Visit us today for exclusive designs and exciting offers. See you soon!');
   const [sentStatus, setSentStatus] = useState<Record<string, boolean>>({});
 
   useEffect(() => {

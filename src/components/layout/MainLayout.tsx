@@ -45,8 +45,8 @@ export function MainLayout({ children }: MainLayoutProps) {
             
             <div className="flex items-center gap-3 pl-1">
               <div className="hidden sm:flex flex-col items-end">
-                <span className="text-sm font-black text-slate-900 leading-tight uppercase tracking-tight italic">{settings.shopName}</span>
-                <span className="text-[10px] font-bold text-primary-600 uppercase tracking-widest">{settings.ownerName}</span>
+                <span className="text-sm font-black text-slate-900 leading-tight uppercase tracking-tight italic">{settings?.shopName || 'Bhumika Garments'}</span>
+                <span className="text-[10px] font-bold text-primary-600 uppercase tracking-widest">{settings?.ownerName || 'Loading...'}</span>
               </div>
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-50 text-primary-600 border border-primary-100 shadow-sm shadow-primary-50">
                 <User className="h-5 w-5" />

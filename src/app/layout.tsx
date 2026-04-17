@@ -3,7 +3,7 @@ import "./globals.css";
 import { ClientLayout } from "./client-layout";
 
 export const metadata: Metadata = {
-  title: "Bhumika Garments ERP",
+  title: "ERP System for Garments Retail",
   description: "Garments Retail ERP",
 };
 

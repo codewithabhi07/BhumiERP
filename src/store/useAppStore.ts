@@ -50,8 +50,9 @@ interface AppState {
   // Settings
   updateSettings: (settings: Partial<ShopSettings>) => Promise<void>;
 
-  // Master Data Import
+  // Master Data Import & Reset
   importData: (data: any) => Promise<void>;
+  resetAllData: () => Promise<void>;
   verifyPin: (pin: string) => boolean;
 }
 
@@ -264,5 +265,22 @@ export const useAppStore = create<AppState>()((set, get) => ({
   verifyPin: (inputPin) => {
     const { settings } = get();
     return settings?.pin === inputPin;
+  },
+
+  resetAllData: async () => {
+    await fetch('/api/settings', {
+      method: 'POST',
+      body: JSON.stringify({ action: 'reset' }),
+    });
+    set({
+      customers: [],
+      employees: [],
+      attendance: [],
+      leaveRequests: [],
+      salaryPayments: [],
+      salesmen: [],
+      invoices: [],
+      // Keep settings
+    });
   },
 }));

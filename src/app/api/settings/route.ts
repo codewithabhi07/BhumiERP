@@ -23,3 +23,30 @@ export async function PUT(request: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+
+export async function POST(request: Request) {
+  try {
+    const { action } = await request.json();
+    if (action === 'reset') {
+      const db = await readDB();
+      // Clear all arrays but keep settings
+      const resetDB = {
+        products: [],
+        customers: [],
+        employees: [],
+        attendance: [],
+        leaveRequests: [],
+        salaryPayments: [],
+        salesmen: [],
+        invoices: [],
+        settings: db.settings || {}
+      };
+      await writeDB(resetDB);
+      return NextResponse.json({ success: true });
+    }
+    return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
+  } catch (error: any) {
+    console.error('API Error (POST /api/settings):', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}

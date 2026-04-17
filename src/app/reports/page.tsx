@@ -19,7 +19,8 @@ import {
   QrCode,
   Wallet,
   IndianRupee,
-  ChevronDown
+  ChevronDown,
+  RefreshCw
 } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, isSameDay } from 'date-fns';
 import { useState, useMemo } from 'react';
@@ -32,8 +33,6 @@ const SALESMEN: Record<string, string> = {
   '3': 'Ankush Dada',
   '4': 'Dipak Mahajan'
 };
-
-const CA_WHATSAPP = '8668613369';
 
 export default function ReportsPage() {
   const { invoices, employees, attendance, settings, deleteInvoice, updateInvoice, salesmen } = useAppStore();
@@ -50,7 +49,10 @@ export default function ReportsPage() {
 
   const filteredInvoices = useMemo(() => {
     return invoices.filter(inv => {
+      if (!inv.date) return false;
       const invDate = new Date(inv.date);
+      if (isNaN(invDate.getTime())) return false;
+      
       invDate.setHours(0, 0, 0, 0);
       
       const start = new Date(startDate);
@@ -102,6 +104,20 @@ export default function ReportsPage() {
       setEditingInvoice(null);
       setEditFormData(null);
       alert('Updated!');
+    }
+  };
+
+  const { resetAllData } = useAppStore();
+
+  const handleResetData = async () => {
+    const confirm1 = window.confirm("⚠️ WARNING: This will permanently DELETE all invoices, products, customers, and staff data. This cannot be undone. Are you sure?");
+    if (confirm1) {
+      const confirm2 = window.confirm("FINAL WARNING: Are you absolutely 100% sure you want to clear your entire database and start from 0?");
+      if (confirm2) {
+        await resetAllData();
+        alert("System has been reset to 0. All data cleared.");
+        window.location.reload();
+      }
     }
   };
 
@@ -159,8 +175,16 @@ export default function ReportsPage() {
 
   const leaveSummary = employees.map(emp => {
     const start = new Date(startDate);
+    start.setHours(0, 0, 0, 0);
+    
     const end = new Date(endDate);
-    const empAttendance = attendance.filter(a => a.employeeId === emp.id && new Date(a.date) >= start && new Date(a.date) <= end);
+    end.setHours(23, 59, 59, 999);
+
+    const empAttendance = attendance.filter(a => {
+      const aDate = new Date(a.date);
+      return a.employeeId === emp.id && aDate >= start && aDate <= end;
+    });
+    
     const abs = empAttendance.filter(a => a.status === 'Absent').length;
     const lve = empAttendance.filter(a => a.status === 'Leave').length;
     const half = empAttendance.filter(a => a.status === 'Half Day').length;
@@ -197,6 +221,13 @@ export default function ReportsPage() {
               </div>
             </div>
             <div className="flex gap-2 ml-4">
+              <Button 
+                variant="outline" 
+                className="h-10 px-4 rounded-xl border-2 border-rose-100 text-rose-600 bg-rose-50 hover:bg-rose-100 text-[10px] font-black uppercase gap-2"
+                onClick={handleResetData}
+              >
+                <RefreshCw className="h-4 w-4" /> Factory Reset
+              </Button>
               <Button 
                 variant="outline" 
                 className="h-10 px-4 rounded-xl border-2 border-primary-100 text-primary-600 bg-primary-50 hover:bg-primary-100 text-[10px] font-black uppercase"

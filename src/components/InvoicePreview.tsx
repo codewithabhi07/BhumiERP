@@ -67,7 +67,7 @@ export function InvoicePreview({ invoice, settings, onClose }: InvoicePreviewPro
             .bill-content {
               width: 210mm !important;
               height: ${isA4Half ? '148.5mm' : '297mm'} !important;
-              padding: 5mm 15mm !important;
+              padding: 0mm 15mm 5mm 15mm !important; /* Top padding strictly 0mm */
               box-sizing: border-box !important;
               display: flex !important;
               flex-direction: column !important;

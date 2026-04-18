@@ -19,7 +19,6 @@ import { useState } from 'react';
 import { cn } from '../../utils/cn';
 
 const menuItems = [
-  { icon: LayoutDashboard, label: 'Dashboard', path: '/', color: 'text-blue-500', bg: 'hover:bg-blue-50' },
   { icon: Receipt, label: 'POS Billing', path: '/billing', color: 'text-emerald-500', bg: 'hover:bg-emerald-50' },
   { icon: Package, label: 'Inventory', path: '/products', color: 'text-orange-500', bg: 'hover:bg-orange-50' },
   { icon: Users, label: 'Customers', path: '/customers', color: 'text-pink-500', bg: 'hover:bg-pink-50' },
@@ -27,6 +26,7 @@ const menuItems = [
   { icon: UserRound, label: 'Staff Mgt', path: '/employees', color: 'text-indigo-500', bg: 'hover:bg-indigo-50' },
   { icon: Wallet, label: 'Salaries', path: '/salaries', color: 'text-violet-500', bg: 'hover:bg-violet-50' },
   { icon: BarChart3, label: 'Reports', path: '/reports', color: 'text-cyan-500', bg: 'hover:bg-cyan-50' },
+  { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard', color: 'text-blue-500', bg: 'hover:bg-blue-50' },
   { icon: Settings, label: 'Settings', path: '/settings', color: 'text-slate-500', bg: 'hover:bg-slate-50' },
 ];
 

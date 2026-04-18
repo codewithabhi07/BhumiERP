@@ -1,12 +1,5 @@
 @import "tailwindcss";
 
-@layer base {
-  body {
-    @apply bg-slate-50 text-slate-900 antialiased overflow-hidden;
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  }
-}
-
 @theme {
   --color-primary-50: #f5f3ff;
   --color-primary-100: #ede9fe;
@@ -19,55 +12,78 @@
   --color-primary-800: #5b21b6;
   --color-primary-900: #4c1d95;
   --color-primary-950: #2e1065;
-
-  /* Vibrant ERP Palette */
-  --color-success: #10b981;
-  --color-warning: #f59e0b;
-  --color-danger: #ef4444;
-  --color-info: #0ea5e9;
-  
-  /* Accent Gradients */
-  --color-vibrant-purple: #8b5cf6;
-  --color-vibrant-blue: #3b82f6;
-  --color-vibrant-pink: #ec4899;
 }
 
-/* Custom scrollbar */
+:root {
+  --foreground-rgb: 15, 23, 42;
+  --background-start-rgb: 248, 250, 252;
+  --background-end-rgb: 241, 245, 249;
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+  background: linear-gradient(
+      to bottom,
+      rgb(var(--background-start-rgb)),
+      rgb(var(--background-end-rgb))
+    )
+    fixed;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Premium Card Glassmorphism */
+.premium-card {
+  @apply bg-white/80 backdrop-blur-xl border border-white/40 shadow-[0_8px_32px_rgba(0,0,0,0.04)] rounded-[2.5rem] transition-all duration-500;
+}
+
+.premium-card:hover {
+  @apply shadow-[0_20px_60px_rgba(124,58,237,0.08)] -translate-y-1 border-primary-100/50;
+}
+
+/* Custom Scrollbar */
 ::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
+  width: 6px;
+  height: 6px;
 }
+
 ::-webkit-scrollbar-track {
-  background: transparent;
+  @apply bg-transparent;
 }
+
 ::-webkit-scrollbar-thumb {
-  @apply bg-slate-200 rounded-full;
-}
-::-webkit-scrollbar-thumb:hover {
-  @apply bg-primary-300;
+  @apply bg-slate-200 rounded-full hover:bg-primary-300 transition-colors;
 }
 
-/* UI Transitions */
-* {
-  @apply transition-all duration-200;
+/* High-End Input Focus */
+input:focus {
+  @apply ring-4 ring-primary-500/10 border-primary-500/50 outline-none transition-all duration-300;
 }
 
-/* Card Hover Effects */
-.hover-card {
-  @apply hover:shadow-2xl hover:shadow-primary-100/50 hover:-translate-y-1;
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-/* Input Focus Glow */
-input:focus, select:focus {
-  @apply ring-4 ring-primary-500/10 border-primary-500;
-}
-
-/* Animations */
-@keyframes slideUp {
-  from { transform: translateY(10px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .animate-slide-up {
-  animation: slideUp 0.4s ease-out forwards;
+  animation: slide-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.4s ease-out forwards;
+}
+
+/* Hide Spinners for inputs */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type=number] {
+  -moz-appearance: textfield;
 }

@@ -5,7 +5,20 @@
   "attendance": [],
   "leaveRequests": [],
   "salaryPayments": [],
-  "salesmen": [],
+  "salesmen": [
+    {
+      "id": "1",
+      "name": "lalit",
+      "phone": "",
+      "commissionRate": 1
+    },
+    {
+      "id": "2",
+      "name": "ganu",
+      "phone": "",
+      "commissionRate": 1
+    }
+  ],
   "invoices": [
     {
       "id": "1776425908395",
@@ -32,6 +45,188 @@
       "totalAmount": 250,
       "paymentMethod": "Cash",
       "date": "2026-04-17T00:00:00.000Z"
+    },
+    {
+      "id": "1776508458281",
+      "invoiceNumber": "INV-101",
+      "customerName": "Cash Customer",
+      "customerPhone": "",
+      "items": [
+        {
+          "productId": "manual-1776508454614",
+          "name": "Night Pant",
+          "color": "Mix",
+          "price": 250,
+          "quantity": 1,
+          "discount": 0,
+          "total": 250,
+          "salesmanId": "1",
+          "salesmanName": "N/A"
+        }
+      ],
+      "subTotal": 250,
+      "tax": 0,
+      "discount": 0,
+      "rounding": 0,
+      "totalAmount": 250,
+      "paymentMethod": "Cash",
+      "date": "2026-04-18T00:00:00.000Z"
+    },
+    {
+      "id": "1776508524572",
+      "invoiceNumber": "INV-102",
+      "customerName": "Cash Customer",
+      "customerPhone": "",
+      "items": [
+        {
+          "productId": "manual-1776508521962",
+          "name": "Knicker",
+          "color": "Mix",
+          "price": 550,
+          "quantity": 1,
+          "discount": 0,
+          "total": 550,
+          "salesmanId": "1",
+          "salesmanName": "N/A"
+        }
+      ],
+      "subTotal": 550,
+      "tax": 0,
+      "discount": 0,
+      "rounding": 0,
+      "totalAmount": 550,
+      "paymentMethod": "Cash",
+      "date": "2026-04-18T00:00:00.000Z"
+    },
+    {
+      "id": "1776509979511",
+      "invoiceNumber": "INV-103",
+      "customerName": "lalit mali ",
+      "customerPhone": "7788778855",
+      "items": [
+        {
+          "productId": "item-1776509848921-lbe4y62t2",
+          "name": "Shirt",
+          "price": 250,
+          "quantity": 1,
+          "discount": 0,
+          "total": 250,
+          "salesmanId": "2",
+          "salesmanName": "N/A"
+        },
+        {
+          "productId": "item-1776509848921-klgpz4d5z",
+          "name": "Knicker",
+          "price": 550,
+          "quantity": 1,
+          "discount": 0,
+          "total": 550,
+          "salesmanId": "4",
+          "salesmanName": "N/A"
+        }
+      ],
+      "subTotal": 800,
+      "tax": 0,
+      "discount": 80,
+      "rounding": -20,
+      "totalAmount": 700,
+      "paymentMethod": "UPI",
+      "date": "2026-04-18T00:00:00.000Z"
+    },
+    {
+      "id": "1776510142243",
+      "invoiceNumber": "INV-104",
+      "customerName": "Lalit",
+      "customerPhone": "12345678",
+      "items": [
+        {
+          "productId": "item-1776510072991-juztioopn",
+          "name": "Shirt",
+          "price": 250,
+          "quantity": 1,
+          "discount": 0,
+          "total": 250,
+          "salesmanId": "2",
+          "salesmanName": "N/A"
+        },
+        {
+          "productId": "item-1776510072991-ber23raod",
+          "name": "Knicker",
+          "price": 500,
+          "quantity": 1,
+          "discount": 0,
+          "total": 500,
+          "salesmanId": "1",
+          "salesmanName": "N/A"
+        }
+      ],
+      "subTotal": 750,
+      "tax": 0,
+      "discount": 150,
+      "rounding": -100,
+      "totalAmount": 500,
+      "paymentMethod": "UPI",
+      "date": "2026-04-18T00:00:00.000Z"
+    },
+    {
+      "id": "1776510325513",
+      "invoiceNumber": "INV-105",
+      "customerName": "Llait",
+      "customerPhone": "",
+      "items": [
+        {
+          "productId": "item-1776510274966-o1gpr51j3",
+          "name": "Night Pant",
+          "price": 250,
+          "quantity": 5,
+          "discount": 0,
+          "total": 1250,
+          "salesmanId": "1",
+          "salesmanName": "lalit"
+        },
+        {
+          "productId": "item-1776510274966-4ycme1bnd",
+          "name": "Ladies Top",
+          "price": 550,
+          "quantity": 6,
+          "discount": 0,
+          "total": 3300,
+          "salesmanId": "2",
+          "salesmanName": "ganu"
+        }
+      ],
+      "subTotal": 4550,
+      "tax": 0,
+      "discount": 455,
+      "rounding": -95,
+      "totalAmount": 4000,
+      "paymentMethod": "UPI",
+      "date": "2026-04-18T00:00:00.000Z"
+    },
+    {
+      "id": "1776521010140",
+      "invoiceNumber": "INV-106",
+      "customerName": "Cash Customer",
+      "customerPhone": "",
+      "items": [
+        {
+          "productId": "item-1776512658028-ruz2aou44",
+          "name": "Lungi",
+          "price": 250,
+          "quantity": 1,
+          "discount": 0,
+          "total": 250,
+          "salesmanId": "1",
+          "salesmanName": "lalit"
+        }
+      ],
+      "subTotal": 250,
+      "tax": 0,
+      "discount": 0,
+      "rounding": 0,
+      "totalAmount": 250,
+      "paymentMethod": "Cash",
+      "date": "2026-04-18T00:00:00.000Z"
     }
   ],
   "settings": {

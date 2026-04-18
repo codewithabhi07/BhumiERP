@@ -12,8 +12,8 @@ interface InvoicePreviewProps {
 }
 
 export function InvoicePreview({ invoice, settings, onClose }: InvoicePreviewProps) {
-  const isA4Half = settings.invoiceType === 'A4 Half';
-  const ITEMS_PER_PAGE = isA4Half ? 10 : 22;
+  // Lock to A4 Half Landscape format as requested
+  const ITEMS_PER_PAGE = 10;
 
   const handlePrint = () => {
     window.print();
@@ -34,7 +34,7 @@ export function InvoicePreview({ invoice, settings, onClose }: InvoicePreviewPro
         {`
           @media print {
             @page {
-              size: A4 portrait;
+              size: A4 portrait; /* Using portrait paper to print on top half */
               margin: 0 !important;
             }
 
@@ -53,31 +53,29 @@ export function InvoicePreview({ invoice, settings, onClose }: InvoicePreviewPro
               display: none !important;
             }
 
-            .a4-container {
+            /* Half A4 Page Container (Landscape Style) */
+            .bill-page {
               width: 210mm !important;
-              height: 297mm !important;
-              margin: 0 !important;
-              padding: 0 !important;
-              page-break-after: always !important;
-              break-after: page !important;
-              display: block !important;
-              background: white !important;
-            }
-
-            .bill-content {
-              width: 210mm !important;
-              height: ${isA4Half ? '148.5mm' : '297mm'} !important;
-              padding: 0mm 15mm 5mm 15mm !important; /* Top padding strictly 0mm */
+              height: 148.5mm !important; /* Exactly half of 297mm */
+              padding: 8mm 12mm !important;
               box-sizing: border-box !important;
+              background: white !important;
               display: flex !important;
               flex-direction: column !important;
-              background: white !important;
+              overflow: hidden !important;
+              position: relative !important;
+              page-break-after: always !important;
+              break-after: page !important;
+            }
+
+            .bill-page:last-child {
+              page-break-after: auto !important;
             }
           }
         `}
       </style>
 
-      <div className="flex flex-col w-full max-w-5xl bg-white rounded-[3rem] shadow-2xl overflow-hidden print:shadow-none print:rounded-none print:max-w-none print:h-auto my-auto">
+      <div className="flex flex-col w-full max-w-5xl bg-white rounded-[3rem] shadow-2xl overflow-hidden print:shadow-none print:rounded-none print:max-w-none my-auto">
         <div className="print-hidden flex items-center justify-between border-b border-slate-100 px-10 py-6 shrink-0 bg-white">
           <div>
             <h3 className="text-2xl font-black text-slate-900 uppercase italic tracking-tighter">
@@ -85,7 +83,7 @@ export function InvoicePreview({ invoice, settings, onClose }: InvoicePreviewPro
             </h3>
             <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1 flex items-center gap-2 font-black">
               <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-              Standard Ink-Saver Layout
+              Professional Half-Page Landscape Format
             </p>
           </div>
 
@@ -109,142 +107,117 @@ export function InvoicePreview({ invoice, settings, onClose }: InvoicePreviewPro
 
         <div className="flex-1 overflow-y-auto bg-slate-100 print:bg-white p-10 print:p-0">
           {itemChunks.map((chunk, idx) => (
-            <div key={idx} className="a4-container shadow-2xl shadow-slate-300/50 mb-12 print:shadow-none print:m-0 mx-auto bg-white">
-              <div className="bill-content">
-                <InvoicePage 
-                  chunk={chunk} 
-                  pageIdx={idx} 
-                  totalPages={itemChunks.length} 
-                  settings={settings} 
-                  invoice={invoice} 
-                  isA4Half={isA4Half}
-                  ITEMS_PER_PAGE={ITEMS_PER_PAGE}
-                />
+            <div key={idx} className="bill-page shadow-2xl shadow-slate-300/50 mb-12 print:shadow-none print:m-0 mx-auto bg-white">
+              <div className="flex flex-col h-full relative text-black">
+                {/* Header */}
+                <div className="flex justify-between items-start border-b border-slate-300 pb-2 mb-3">
+                  <div className="space-y-0.5">
+                    <h1 className="text-2xl font-black uppercase italic leading-none text-slate-900">{settings.shopName}</h1>
+                    <p className="font-bold text-primary-600 uppercase tracking-widest text-[9px]">{settings.ownerName} (Proprietor)</p>
+                    <div className="space-y-0.5">
+                      <p className="text-[9px] font-medium text-slate-500 uppercase leading-tight max-w-[450px]">{settings.address}</p>
+                      <p className="text-[10px] font-bold text-slate-700 uppercase">Phone: +91 {settings.phone}</p>
+                      {settings.gstNumber && <p className="text-[10px] font-bold text-slate-700 uppercase leading-none">GSTIN: {settings.gstNumber}</p>}
+                    </div>
+                  </div>
+                  <div className="text-right flex flex-col items-end pt-1">
+                    <div className="border border-slate-400 px-3 py-0.5 rounded mb-2">
+                      <span className="text-[9px] font-black uppercase tracking-widest text-slate-700">Tax Invoice</span>
+                    </div>
+                    <div className="space-y-0.5">
+                      <p className="text-[8px] font-bold text-slate-400 uppercase leading-none">Invoice No</p>
+                      <p className="text-lg font-black italic tracking-tighter leading-none">{invoice.invoiceNumber}</p>
+                      <p className="text-[8px] font-bold text-slate-400 uppercase leading-none mt-1">Date</p>
+                      <p className="text-[10px] font-bold text-slate-800 uppercase leading-none">{format(new Date(invoice.date), 'dd MMM yyyy')}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Customer Details */}
+                <div className="grid grid-cols-2 gap-4 border-b border-slate-200 pb-2 mb-3">
+                  <div>
+                    <span className="text-[8px] font-bold text-slate-400 uppercase">Customer:</span>
+                    <p className="text-[11px] font-black uppercase tracking-tight leading-none mt-0.5">{invoice.customerName || 'Walk-in Customer'}</p>
+                    {invoice.customerPhone && <p className="text-[9px] font-bold text-slate-500 mt-1">Mob: {invoice.customerPhone}</p>}
+                  </div>
+                  <div className="text-right">
+                    <span className="text-[8px] font-bold text-slate-400 uppercase">Payment:</span>
+                    <p className="text-[10px] font-black uppercase italic text-slate-700 mt-0.5">BY {invoice.paymentMethod}</p>
+                  </div>
+                </div>
+
+                {/* Items Table */}
+                <div className="flex-1">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="border-b border-slate-300 bg-slate-50/50">
+                        <th className="py-1 px-1 text-[9px] font-black uppercase text-slate-500 w-8 text-center border-r border-slate-200">Sr.</th>
+                        <th className="py-1 px-2 text-[9px] font-black uppercase text-slate-500 border-r border-slate-200">Description</th>
+                        <th className="py-1 px-1 text-[9px] font-black uppercase text-slate-500 w-10 text-center border-r border-slate-200">S.M</th>
+                        <th className="py-1 px-1 text-[9px] font-black uppercase text-slate-500 w-16 text-center border-r border-slate-200">Rate</th>
+                        <th className="py-1 px-1 text-[9px] font-black uppercase text-slate-500 w-10 text-center border-r border-slate-200">Qty</th>
+                        <th className="py-1 px-2 text-[9px] font-black uppercase text-slate-500 w-20 text-right">Amount</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {chunk.map((item: any, cIdx: number) => (
+                        <tr key={cIdx} className="border-b border-slate-100">
+                          <td className="py-1 px-1 text-[10px] font-medium text-center border-r border-slate-100">{idx * ITEMS_PER_PAGE + cIdx + 1}</td>
+                          <td className="py-1 px-2 text-[10px] font-bold uppercase italic border-r border-slate-100">{item.name}</td>
+                          <td className="py-1 px-1 text-[9px] font-bold text-slate-400 text-center border-r border-slate-100">#{item.salesmanId}</td>
+                          <td className="py-1 px-1 text-[10px] font-medium text-center border-r border-slate-100">{item.price.toLocaleString()}</td>
+                          <td className="py-1 px-1 text-[10px] font-black text-center border-r border-slate-100">{item.quantity}</td>
+                          <td className="py-1 px-2 text-[10px] font-black text-right">₹{item.total.toLocaleString()}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Totals */}
+                <div className="pt-3">
+                  <div className="flex justify-between items-end gap-6">
+                    <div className="flex-1">
+                      <div className="border border-slate-300 p-2 rounded-lg bg-slate-50/30 flex justify-between items-center mb-2">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Net Payable Amount</span>
+                        <h2 className="text-2xl font-black italic tracking-tighter text-slate-900 leading-none">₹{invoice.totalAmount.toLocaleString()}</h2>
+                      </div>
+                      <p className="text-[7px] font-bold text-slate-400 uppercase leading-tight italic">
+                        * NO REFUND. EXCHANGE WITHIN 7 DAYS ONLY WITH BILL. COTTON COLOUR NOT GUARANTEED.
+                      </p>
+                    </div>
+                    <div className="w-40 space-y-1">
+                      <div className="flex justify-between text-[9px] font-bold uppercase">
+                        <span className="text-slate-500 tracking-tighter">Gross Total</span>
+                        <span className="text-slate-900">₹{invoice.subTotal.toLocaleString()}</span>
+                      </div>
+                      {invoice.discount > 0 && (
+                        <div className="flex justify-between text-[9px] font-black text-rose-600 italic">
+                          <span className="tracking-tighter">Discount (-)</span>
+                          <span>₹{invoice.discount.toLocaleString()}</span>
+                        </div>
+                      )}
+                      {invoice.tax > 0 && (
+                        <div className="flex justify-between text-[9px] font-bold text-slate-700">
+                          <span className="tracking-tighter">GST (12%)</span>
+                          <span>₹{invoice.tax.toLocaleString()}</span>
+                        </div>
+                      )}
+                      <div className="pt-2 border-t border-slate-300 text-center">
+                        <p className="text-[7px] font-black uppercase tracking-widest text-slate-500">Authorized Signatory</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Footer */}
+                <div className="mt-2 text-center pt-1 border-t border-slate-100 opacity-60">
+                   <p className="text-[8px] font-black tracking-[0.4em] uppercase italic">✨ THANK YOU FOR SHOPPING AT BHUMIKA ✨</p>
+                </div>
               </div>
             </div>
           ))}
         </div>
-      </div>
-    </div>
-  );
-}
-
-function InvoicePage({ chunk, pageIdx, totalPages, settings, invoice, isA4Half, ITEMS_PER_PAGE }: any) {
-  return (
-    <div className="flex flex-col h-full bg-white relative text-black">
-      {/* Header - Ink Saver */}
-      <div className="flex justify-between items-start border-b-2 border-slate-300 pb-3 mb-4">
-        <div className="space-y-0.5">
-          <h1 className={cn("font-black uppercase italic leading-none text-slate-900", isA4Half ? "text-3xl" : "text-5xl")}>
-            {settings.shopName}
-          </h1>
-          <p className="font-bold text-slate-600 uppercase tracking-widest text-[10px]">
-            {settings.ownerName} (Proprietor)
-          </p>
-          <div className="pt-2 space-y-0.5">
-            <p className="text-[10px] font-medium text-slate-500 uppercase leading-tight max-w-[400px]">{settings.address}</p>
-            <p className="text-[10px] font-bold text-slate-700 uppercase">Phone: +91 {settings.phone}</p>
-            {settings.gstNumber && <p className="text-[10px] font-bold text-slate-700 uppercase">GSTIN: {settings.gstNumber}</p>}
-          </div>
-        </div>
-        <div className="text-right flex flex-col items-end">
-          <div className="border border-slate-400 px-4 py-1 rounded-md mb-2">
-            <span className="text-[10px] font-black uppercase tracking-widest text-slate-700">Tax Invoice</span>
-          </div>
-          <div className="space-y-0.5">
-            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-none">Invoice No</p>
-            <p className="text-xl font-black italic tracking-tighter leading-none text-slate-800">{invoice.invoiceNumber}</p>
-            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-none mt-2">Date</p>
-            <p className="text-[10px] font-bold text-slate-800 uppercase leading-none">{format(new Date(invoice.date), 'dd MMM yyyy')}</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Bill To */}
-      <div className="grid grid-cols-2 gap-4 border border-slate-200 p-3 rounded-xl mb-4">
-        <div>
-          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">Customer:</p>
-          <p className="text-base font-black uppercase tracking-tight text-slate-800">{invoice.customerName || 'Cash Customer'}</p>
-          {invoice.customerPhone && <p className="text-[10px] font-medium text-slate-600">Contact: +91 {invoice.customerPhone}</p>}
-        </div>
-        <div className="text-right">
-          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">Payment Method:</p>
-          <p className="text-sm font-black uppercase italic text-slate-700">{invoice.paymentMethod}</p>
-        </div>
-      </div>
-
-      {/* Table */}
-      <div className="flex-1">
-        <table className="w-full text-left border-collapse border-b-2 border-slate-300">
-          <thead>
-            <tr className="bg-slate-50 border-y border-slate-300">
-              <th className="py-2 px-2 text-[9px] font-black uppercase tracking-widest border-r border-slate-200 w-8 text-center">Sr.</th>
-              <th className="py-2 px-2 text-[9px] font-black uppercase tracking-widest border-r border-slate-200">Item Description</th>
-              <th className="py-2 px-2 text-[9px] font-black uppercase tracking-widest border-r border-slate-200 text-center w-10">S.M</th>
-              <th className="py-2 px-2 text-[9px] font-black uppercase tracking-widest border-r border-slate-200 text-center w-16">Rate</th>
-              <th className="py-2 px-2 text-[9px] font-black uppercase tracking-widest border-r border-slate-200 text-center w-10">Qty</th>
-              <th className="py-2 px-2 text-[9px] font-black uppercase tracking-widest text-right w-20">Amount</th>
-            </tr>
-          </thead>
-          <tbody>
-            {chunk.map((item: any, idx: number) => (
-              <tr key={idx} className="border-b border-slate-100">
-                <td className="py-2 px-2 text-[10px] font-medium border-r border-slate-100 text-center">{pageIdx * ITEMS_PER_PAGE + idx + 1}</td>
-                <td className="py-2 px-2 text-[10px] font-bold uppercase italic border-r border-slate-100 text-slate-700">{item.name}</td>
-                <td className="py-2 px-2 text-[9px] font-bold text-slate-400 border-r border-slate-100 text-center">#{item.salesmanId}</td>
-                <td className="py-2 px-2 text-[10px] font-medium border-r border-slate-100 text-center">{item.price.toLocaleString()}</td>
-                <td className="py-2 px-2 text-[10px] font-bold border-r border-slate-100 text-center text-slate-700">{item.quantity}</td>
-                <td className="py-2 px-2 text-[10px] font-bold text-right text-slate-800">{item.total.toLocaleString()}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Totals Section - No Solid Black */}
-      <div className="pt-4 mt-2">
-        <div className="flex justify-between items-end gap-10">
-          <div className="flex-1 space-y-3">
-            <div className="border-2 border-slate-800 p-4 rounded-xl flex justify-between items-center bg-slate-50/50">
-              <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Grand Total</p>
-                <p className="text-[8px] font-bold uppercase text-slate-400 italic">Inclusive of all adjustments</p>
-              </div>
-              <div className="text-right">
-                <h2 className={cn("font-black italic tracking-tighter leading-none text-slate-900", isA4Half ? "text-3xl" : "text-5xl")}>
-                  ₹{invoice.totalAmount.toLocaleString()}
-                </h2>
-              </div>
-            </div>
-            <p className="text-[8px] font-bold text-slate-400 uppercase leading-tight italic">
-              Terms: Goods once sold will not be taken back. Exchange allowed within 7 days.
-            </p>
-          </div>
-
-          <div className="w-48 space-y-1.5">
-            <div className="flex justify-between text-[10px] font-bold uppercase">
-              <span className="text-slate-500">Subtotal</span>
-              <span className="text-slate-900 font-bold">₹{invoice.subTotal.toLocaleString()}</span>
-            </div>
-            {invoice.discount > 0 && (
-              <div className="flex justify-between text-[10px] font-bold uppercase text-slate-600 italic">
-                <span>Discount (-)</span>
-                <span>₹{invoice.discount.toLocaleString()}</span>
-              </div>
-            )}
-            <div className="pt-2 mt-4 border-t border-slate-300 text-center">
-              <div className="h-10 flex items-end justify-center">
-                <p className="text-[8px] font-black uppercase tracking-widest text-slate-500">Authorized Signatory</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Footer */}
-      <div className="mt-4 text-center border-t border-slate-100 pt-2">
-        <p className="text-[10px] font-bold tracking-[0.3em] uppercase italic text-slate-500">Thank You! Visit Again</p>
-        <p className="text-[8px] font-bold text-slate-300 mt-0.5 uppercase tracking-widest">{pageIdx + 1} / {totalPages}</p>
       </div>
     </div>
   );

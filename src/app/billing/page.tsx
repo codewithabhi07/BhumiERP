@@ -94,7 +94,7 @@ export default function BillingPage() {
     const newCart = [...cart];
     const item = { ...newCart[idx], ...updates };
     if (updates.salesmanId !== undefined) {
-      item.salesmanName = SALESMEN_MAP[item.salesmanId] || 'N/A';
+      item.salesmanName = SALESMEN_MAP[updates.salesmanId as string] || 'N/A';
     }
     item.total = Math.round(item.quantity * item.price);
     newCart[idx] = item;
